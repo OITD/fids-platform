@@ -1,0 +1,40 @@
+services:
+  proxy-bridge:
+    image: alpine/socat
+    container_name: proxy-bridge
+    command: tcp-listen:4000,fork,reuseaddr tcp-connect:host.docker.internal:4000
+    networks:
+      - proxy
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=proxy'
+
+      # API endpoint
+      - 'traefik.http.routers.backend.rule=Host(`api.${DOMAIN}`)'
+      - 'traefik.http.routers.backend.middlewares=enableWebsocket@file,localDevHeaders@file'
+      - 'traefik.http.routers.backend.tls=true'
+      - 'traefik.http.routers.backend.entrypoints=https'
+      - 'traefik.http.routers.backend.service=backend'
+      - 'traefik.http.services.backend.loadbalancer.server.port=4000'
+
+  frontend:
+    image: alpine/socat
+    container_name: frontend-bridge
+    command: tcp-listen:3000,fork,reuseaddr tcp-connect:host.docker.internal:3000
+    networks:
+      - proxy
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=proxy'
+
+      # Frontend application
+      - 'traefik.http.routers.frontend.rule=Host(`${APP_NAME}.${DOMAIN}`)'
+      - 'traefik.http.routers.frontend.middlewares=localDevHeaders@file'
+      - 'traefik.http.routers.frontend.tls=true'
+      - 'traefik.http.routers.frontend.entrypoints=https'
+      - 'traefik.http.routers.frontend.service=frontend'
+      - 'traefik.http.services.frontend.loadbalancer.server.port=3000'
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,74 @@
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/ssl/traefik/_wildcard.{{env "DOMAIN"}}.pem
+        keyFile: /etc/ssl/traefik/_wildcard.{{env "DOMAIN"}}-key.pem
+  certificates:
+    - certFile: /etc/ssl/traefik/_wildcard.{{env "DOMAIN"}}.pem
+      keyFile: /etc/ssl/traefik/_wildcard.{{env "DOMAIN"}}-key.pem
+
+http:
+  services:
+    # Traefik service - We need to implement it
+    traefik:
+      loadBalancer:
+        servers:
+          - url: "http://traefik:8080"
+
+  middlewares:
+
+    # Traefik
+    traefikDashboardAuth:
+      basicAuth:
+        users:
+          - "{{env "TRAEFIK_DASHBOARD_USER"}}:{{env "TRAEFIK_DASHBOARD_PWD"}}"
+
+    # Security Headers
+    securityHeaders:
+      headers:
+        customResponseHeaders:
+          X-Robots-Tag: "none,noarchive,nosnippet,notranslate,noimageindex"
+          server: ""
+        sslProxyHeaders:
+          X-Forwarded-Proto: https
+        referrerPolicy: "same-origin"
+        hostsProxyHeaders:
+          - "X-Forwarded-Host"
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        contentTypeNosniff: true
+        browserXssFilter: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsSeconds: 63072000
+        stsPreload: true
+
+    # Logto Headers
+    localDevHeaders:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+          - POST
+          - PATCH
+          - DELETE
+        accessControlAllowOriginList:
+          - "*"
+        addVaryHeader: true
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowCredentials: true
+        # These settings are mainly to permit operation of iframe enclosed apps
+        customResponseHeaders:
+          X-Frame-Options: "ALLOW-FROM https://*.{{env "DOMAIN"}}"
+          Content-Security-Policy: "frame-ancestors 'self' https://*.{{env "DOMAIN"}}; sandbox allow-same-origin allow-scripts allow-forms allow-popups"
+
+    # Enable Websocket Headers
+    enableWebsocket:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          Connection: "Upgrade"

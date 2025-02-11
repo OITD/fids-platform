@@ -1,0 +1,80 @@
+services:
+  logto:
+    image: svhd/logto:${TAG-1.16}
+    container_name: logto
+    hostname: logto
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "./packages/cli/custom-setup/entrypoint.sh"]
+#    entrypoint: ["sh", "-c", "npm run cli db seed -- --swe && npm start"]
+    ports:
+      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:3002:3002"
+    environment:
+      NODE_ENV: production
+      TRUST_PROXY_HEADER: 1
+      DB_URL: "${POSTGRES_NO_NAME_URL}/logto"
+      ENDPOINT: "${LOGTO_ENTRY_ENDPOINT}"
+      ADMIN_ENDPOINT: "${LOGTO_ADMIN_ENDPOINT}"
+
+      # App Specific
+      APP_NAME: "${APP_NAME}"
+      APP_URI: "${APP_URI}"
+      APP_URL: "${APP_URL}"
+      APP_API_URL: "${APP_API_URL}"
+      APP_DESCRIPTION: "${APP_DESCRIPTION}"
+
+      LOGTO_APP_ID: "${LOGTO_APP_ID}"
+      LOGTO_APP_SECRET: "${LOGTO_APP_SECRET}"
+      LOGTO_APP_API_RESOURCE: "${LOGTO_APP_API_RESOURCE}"
+      LOGTO_MANAGEMENT_API_APPLICATION_ID: "${LOGTO_MANAGEMENT_API_APPLICATION_ID}"
+      LOGTO_MANAGEMENT_API_APPLICATION_SECRET: "${LOGTO_MANAGEMENT_API_APPLICATION_SECRET}"
+
+      CONNECTOR_ID_GOOGLE: "${CONNECTOR_ID_GOOGLE}"
+      LOGTO_GOOGLE_CLIENT_ID: "${LOGTO_GOOGLE_CLIENT_ID}"
+      LOGTO_GOOGLE_CLIENT_SECRET: "${LOGTO_GOOGLE_CLIENT_SECRET}"
+      SSO_CONNECTOR_ID_GOOGLE: "${SSO_CONNECTOR_ID_GOOGLE}"
+      LOGTO_GOOGLE_WORKSPACE_CLIENT_ID: "${LOGTO_GOOGLE_WORKSPACE_CLIENT_ID}"
+      LOGTO_GOOGLE_WORKSPACE_CLIENT_SECRET: "${LOGTO_GOOGLE_WORKSPACE_CLIENT_SECRET}"
+    labels:
+      # Enable this container to be mapped by traefik
+      # For more information, see: https://docs.traefik.io/providers/docker/#exposedbydefault
+      - "traefik.enable=true"
+      # Define the network that should be used
+      - "traefik.docker.network=proxy"
+
+      # URL to reach logto container
+      - "traefik.http.routers.logto.rule=Host(`logto.${DOMAIN}`)"
+      - "traefik.http.routers.logto.middlewares=enableWebsocket@file,localDevHeaders@file"
+      # Activation of TLS
+      - "traefik.http.routers.logto.tls=true"
+      - "traefik.http.routers.logto.entrypoints=https"
+      - "traefik.http.routers.logto.service=logto"
+      # If port is different than 80, use the following service:
+      - "traefik.http.services.logto.loadbalancer.server.port=3001"
+
+      # URL to reach logto-admin container
+      - "traefik.http.routers.admin.rule=Host(`admin.${DOMAIN}`)"
+      # Activation of TLS
+      - "traefik.http.routers.admin.tls=true"
+      - "traefik.http.routers.admin.entrypoints=https"
+      - "traefik.http.routers.admin.service=admin"
+      - "traefik.http.routers.admin.middlewares=enableWebsocket@file,localDevHeaders@file"
+      # If port is different than 80, use the following service:
+      - "traefik.http.services.admin.loadbalancer.server.port=3002"
+    restart: unless-stopped
+    volumes:
+      - ${PWD}/infra/docker/logto/custom-setup:/etc/logto/packages/cli/custom-setup
+    networks:
+      proxy:
+        aliases:
+          - "logto.${DOMAIN}"
+          - "admin.${DOMAIN}"
+
+# Make the externally created network "proxy" available as external
+networks:
+  proxy:
+    external: true
