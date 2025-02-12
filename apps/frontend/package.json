@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "gen": "encore gen client --output=./src/lib/client.ts --env=local",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

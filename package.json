@@ -9,7 +9,7 @@
     "lint": "eslint -c ./eslint.config.mjs .",
     "format": "prettier --write .",
     "libs": "pnpm --filter common run build",
-    "predev": "pnpm run libs",
+    "predev": "pnpm run libs && pnpm --filter frontend run gen",
     "dev": "pnpm --filter frontend run dev"
   },
   "keywords": [],
