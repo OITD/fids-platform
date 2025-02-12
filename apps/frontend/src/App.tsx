@@ -1,11 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { isBlank } from '@fids-platform/common';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
+import Client, { Local } from './lib/client';
 
 function App() {
   const [count, setCount] = useState(0);
+  const [greeting, setGreeting] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    // Create a new client instance using the Local endpoint
+    const client = new Client(Local);
+
+    // Make the API call when component mounts
+    const fetchGreeting = async () => {
+      try {
+        const response = await client.hello.get('Frontend User');
+        setGreeting(response.message);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch greeting');
+      }
+    };
+
+    fetchGreeting();
+  }, []); // Empty dependency array means this runs once on mount
 
   return (
     <>
@@ -18,6 +38,21 @@ function App() {
         </a>
       </div>
       <h1>Vite + React</h1>
+
+      {/* Display the greeting from the API */}
+      {greeting && (
+        <div className="greeting">
+          <h2>{greeting}</h2>
+        </div>
+      )}
+
+      {/* Display any errors */}
+      {error && (
+        <div className="error" style={{ color: 'red' }}>
+          Error: {error}
+        </div>
+      )}
+
       <div className="card">
         <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
         <p>
