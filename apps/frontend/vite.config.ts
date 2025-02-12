@@ -43,9 +43,9 @@ export default defineConfig(({ mode }) => {
     define: {
       // Expose env variables to the client app
       // Note: Must prefix with VITE_ to be exposed
-      ...Object.keys(env || {}).reduce((acc, key) => {
+      ...Object.keys(env || {}).reduce<Record<string, string>>((acc, key) => {
         if (key.startsWith('VITE_')) {
-          acc[`process.env.${key}`] = JSON.stringify(env[key]);
+          acc[`process.env.${key}`] = JSON.stringify(env?.[key]);
         }
         return acc;
       }, {}),
