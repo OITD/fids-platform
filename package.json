@@ -3,11 +3,13 @@
   "private": true,
   "version": "0.0.1",
   "description": "Federated Identity for a Borderless World.",
-  "type": "module",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint -c ./eslint.config.mjs .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "common": "pnpm --filter common run build",
+    "frontend": "pnpm --filter frontend run dev"
   },
   "keywords": [],
   "author": "",
