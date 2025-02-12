@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { expand } from 'dotenv-expand';
 import { config } from 'dotenv';
@@ -39,7 +40,7 @@ export default defineConfig(({ mode }) => {
   const env = loadAndExpandEnv(mode);
 
   return {
-    plugins: [react(), tsconfigPaths()],
+    plugins: [react(), tailwindcss(), tsconfigPaths()],
     define: {
       // Expose env variables to the client app
       // Note: Must prefix with VITE_ to be exposed

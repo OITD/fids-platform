@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { isBlank } from '@fids-platform/common';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
-import './App.css';
 import Client, { Local } from './lib/client';
 
 function App() {
