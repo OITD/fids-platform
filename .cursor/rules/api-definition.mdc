@@ -1,0 +1,95 @@
+---
+description: API Definition Standards
+globs: *.ts
+---
+# API Definition Standards
+
+Standards for defining type-safe API endpoints in Encore.ts.
+
+<rule>
+name: api_definition
+description: Enforces standards for API endpoint definitions and type safety
+filters:
+  # Match TypeScript files
+  - type: file_extension
+    pattern: "\\.ts$"
+  # Match API endpoint definitions
+  - type: content
+    pattern: "api\\s*\\("
+  # Match file modifications
+  - type: event
+    pattern: "file_modify"
+
+actions:
+  - type: enforce
+    conditions:
+      # Enforce interface definitions for params/response
+      - pattern: "api\\([^{]*\\{[^}]*\\}\\s*,\\s*async\\s*\\([^:]*\\)\\s*=>"
+        message: "API endpoints must define TypeScript interfaces for request parameters and responses"
+
+      # Enforce proper API method specification
+      - pattern: "api\\(\\s*\\{\\s*\\}\\s*,"
+        message: "API options object must specify HTTP method"
+
+  - type: suggest
+    message: |
+      When defining API endpoints:
+
+      1. Type Safety:
+         - Define interfaces for request parameters
+         - Define interfaces for response types
+         - Use built-in request validation
+
+      2. API Structure:
+         ```typescript
+         interface RequestParams {
+           // Define request parameters
+         }
+         interface ResponseType {
+           // Define response structure
+         }
+         export const endpoint = api(
+           { method: "POST" },
+           async (params: RequestParams): Promise<ResponseType> => {
+             // Implementation
+           }
+         );
+         ```
+
+      3. Parameter Types:
+         - Use Header<"Header-Name"> for HTTP headers
+         - Use Query<type> for URL query parameters
+         - Use path parameters with :param or *wildcard syntax
+
+      4. Common Patterns:
+         - Full: params and response
+         - Response only: no params
+         - Request only: void response
+         - No data: no params, void response
+
+examples:
+  - input: |
+      # Bad: No type definitions
+      export const badEndpoint = api({}, async (p) => {
+        return { message: "Hello" };
+      });
+
+      # Good: Proper type definitions
+      interface PingParams {
+        name: string;
+      }
+      interface PingResponse {
+        message: string;
+      }
+      export const ping = api(
+        { method: "POST" },
+        async (p: PingParams): Promise<PingResponse> => {
+          return { message: `Hello ${p.name}!` };
+        }
+      );
+    output: "Properly typed API endpoint definition"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>
