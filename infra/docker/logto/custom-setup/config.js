@@ -1,15 +1,15 @@
 import { customAlphabet } from 'nanoid';
-import { defaultTenantId, adminTenantId } from '@logto/schemas';
+import { defaultTenantId } from '@logto/schemas';
 // import { Connectors } from '@logto/schemas';
 
 // For IDs (20 chars, lowercase alphanumeric)
 const generateId = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 20);
 
 // For shorter IDs (12 chars, lowercase alphanumeric)
-const generateShortId = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12);
+// const generateShortId = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12);
 
 // For secrets (32 chars, mixed case alphanumeric)
-const generateSecret = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 32);
+// const generateSecret = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 32);
 
 // const id = generateId();       // e.g. "n97ofytecm4prbef76lnz"
 // const shortId = generateShortId(); // e.g. "j0ui1959vbv9"
@@ -32,10 +32,14 @@ function formatDate(date) {
 
 const now = new Date();
 
-console.log('process.env', JSON.stringify(process.env, null, 2));
+console.log(' ');
+console.log('process.env:', process.env);
+console.log(' ');
 
 const TENANT_ID = defaultTenantId || 'default';
+console.log(' ');
 console.log('TENANT_ID:', TENANT_ID);
+console.log(' ');
 
 const APPLICATION_ID_M2M = `${process.env.LOGTO_MANAGEMENT_API_APPLICATION_ID}`;
 const APPLICATION_NAME_M2M = 'FIDS HUB';
@@ -71,7 +75,7 @@ const SSO_CONNECTOR_NAME_GOOGLE = 'OITD Google Workspace Connector';
 const SSO_CONNECTOR_CONFIG_SCOPE_GOOGLE = 'openid profile email';
 const SSO_CONNECTOR_CONFIG_CLIENT_ID_GOOGLE = `${process.env.LOGTO_GOOGLE_WORKSPACE_CLIENT_ID}`;
 const SSO_CONNECTOR_CONFIG_CLIENT_SECRET_GOOGLE = `${process.env.LOGTO_GOOGLE_WORKSPACE_CLIENT_SECRET}`;
-const SSO_CONNECTOR_DOMAINS_GOOGLE = ['atbventures.com', 'atb.com'];
+const SSO_CONNECTOR_DOMAINS_GOOGLE = process.env.LOGTO_GOOGLE_WORKSPACE_DOMAINS;
 const SSO_CONNECTOR_BRANDING_DISPLAY_NAME_GOOGLE = 'OITD Workspace';
 
 const RESOURCE_ID = generateId();
