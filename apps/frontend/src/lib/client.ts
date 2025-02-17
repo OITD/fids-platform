@@ -30,7 +30,11 @@ export function PreviewEnv(pr: number | string): BaseURL {
  * Client is an API client for the fids-platform-c9ui Encore application.
  */
 export default class Client {
+    public readonly admin: admin.ServiceClient
+    public readonly frontend: frontend.ServiceClient
     public readonly hello: hello.ServiceClient
+    public readonly logto: logto.ServiceClient
+    public readonly upload: upload.ServiceClient
 
 
     /**
@@ -41,7 +45,11 @@ export default class Client {
      */
     constructor(target: BaseURL, options?: ClientOptions) {
         const base = new BaseClient(target, options ?? {})
+        this.admin = new admin.ServiceClient(base)
+        this.frontend = new frontend.ServiceClient(base)
         this.hello = new hello.ServiceClient(base)
+        this.logto = new logto.ServiceClient(base)
+        this.upload = new upload.ServiceClient(base)
     }
 }
 
@@ -58,6 +66,63 @@ export interface ClientOptions {
 
     /** Default RequestInit to be used for the client */
     requestInit?: Omit<RequestInit, "headers"> & { headers?: Record<string, string> }
+
+    /**
+     * Allows you to set the authentication data to be used for each
+     * request either by passing in a static object or by passing in
+     * a function which returns a new object for each request.
+     */
+    auth?: auth.AuthParams | AuthDataGenerator
+}
+
+export namespace admin {
+    export interface DashboardData {
+        value: string
+    }
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+        }
+
+        /**
+         * Endpoint that responds with a hardcoded value.
+         * To call it, run in your terminal:
+         * curl --header "Authorization: <valid-token>" http://localhost:4000/admin
+         */
+        public async getDashboardData(): Promise<DashboardData> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/admin`)
+            return await resp.json() as DashboardData
+        }
+    }
+}
+
+export namespace auth {
+    export interface AuthParams {
+        token: string
+    }
+}
+
+export namespace frontend {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+        }
+
+        /**
+         * Making use of app.static to serve static assets from the file system.
+         * https://encore.dev/docs/ts/primitives/static-assets
+         */
+        public async assets(method: "HEAD", body?: BodyInit, options?: CallParameters): Promise<globalThis.Response> {
+            return this.baseClient.callAPI(method, `/frontend.assets`, body, options)
+        }
+    }
 }
 
 export namespace hello {
@@ -81,6 +146,75 @@ export namespace hello {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI("GET", `/hello/${encodeURIComponent(name)}`)
             return await resp.json() as Response
+        }
+    }
+}
+
+export namespace logto {
+    export interface LogtoAPIOptions {
+        path: string
+        method: string
+        headers?: { [key: string]: string }
+        body?: string
+    }
+
+    export interface TokenResult {
+        token: string
+    }
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+        }
+
+        /**
+         * Generic Logto API call endpoint
+         */
+        public async callApi(params: LogtoAPIOptions): Promise<{
+    data?: any
+}> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("POST", `/logto.callApi`, JSON.stringify(params))
+            return await resp.json() as {
+    data?: any
+}
+        }
+
+        /**
+         * Internal endpoint to get management API token
+         */
+        public async getManagementApiToken(): Promise<TokenResult> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("POST", `/logto.getManagementApiToken`)
+            return await resp.json() as TokenResult
+        }
+    }
+}
+
+export namespace upload {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+        }
+
+        /**
+         * Raw endpoint for serving a file from the database
+         */
+        public async get(method: "GET", fileName: string, body?: BodyInit, options?: CallParameters): Promise<globalThis.Response> {
+            return this.baseClient.callAPI(method, `/files/${encodeURIComponent(fileName)}`, body, options)
+        }
+
+        /**
+         * Raw endpoint for storing a multiple files to the database.
+         * Setting bodyLimit to null allows for unlimited file size.
+         */
+        public async saveMultiple(method: "POST", body?: BodyInit, options?: CallParameters): Promise<globalThis.Response> {
+            return this.baseClient.callAPI(method, `/upload-multiple`, body, options)
         }
     }
 }
@@ -289,6 +423,11 @@ type CallParameters = Omit<RequestInit, "method" | "body" | "headers"> & {
     query?: Record<string, string | string[]>
 }
 
+// AuthDataGenerator is a function that returns a new instance of the authentication data required by this API
+export type AuthDataGenerator = () =>
+  | auth.AuthParams
+  | Promise<auth.AuthParams | undefined>
+  | undefined;
 
 // A fetcher is the prototype for the inbuilt Fetch function
 export type Fetcher = typeof fetch;
@@ -300,6 +439,7 @@ class BaseClient {
     readonly fetcher: Fetcher
     readonly headers: Record<string, string>
     readonly requestInit: Omit<RequestInit, "headers"> & { headers?: Record<string, string> }
+    readonly authGenerator?: AuthDataGenerator
 
     constructor(baseURL: string, options: ClientOptions) {
         this.baseURL = baseURL
@@ -319,9 +459,41 @@ class BaseClient {
         } else {
             this.fetcher = boundFetch
         }
+
+        // Setup an authentication data generator using the auth data token option
+        if (options.auth !== undefined) {
+            const auth = options.auth
+            if (typeof auth === "function") {
+                this.authGenerator = auth
+            } else {
+                this.authGenerator = () => auth
+            }
+        }
     }
 
     async getAuthData(): Promise<CallParameters | undefined> {
+        let authData: auth.AuthParams | undefined;
+
+        // If authorization data generator is present, call it and add the returned data to the request
+        if (this.authGenerator) {
+            const mayBePromise = this.authGenerator();
+            if (mayBePromise instanceof Promise) {
+                authData = await mayBePromise;
+            } else {
+                authData = mayBePromise;
+            }
+        }
+
+        if (authData) {
+            const data: CallParameters = {};
+
+            data.headers = makeRecord<string, string>({
+                authorization: authData.token,
+            });
+
+            return data;
+        }
+
         return undefined;
     }
 
