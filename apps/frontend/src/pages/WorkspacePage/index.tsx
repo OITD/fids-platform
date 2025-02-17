@@ -8,7 +8,10 @@ import { FileList } from './components/FileList';
 import { useLogto } from '@logto/react';
 import { LoadingSpinner } from '~/components/loading-spinner.tsx';
 import { ErrorMessage } from '~/pages/OrganizationPage/components/ErrorMessage';
-import { Topbar } from '~/components/topbar.tsx';
+import { WorkspaceTopbar } from '~/components/workspace-topbar';
+import { Button } from '~/components/ui/button';
+import { Upload } from 'lucide-react';
+import { FileUploadDialog } from './components/FileUpload';
 
 export const WorkspacePage = () => {
   const { orgId, workspaceId } = useParams();
@@ -21,6 +24,7 @@ export const WorkspacePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [userScopes, setUserScopes] = useState<string[]>([]);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
 
   const loadFiles = useCallback(async () => {
     if (!orgId) return;
@@ -59,6 +63,15 @@ export const WorkspacePage = () => {
     await loadFiles();
   }, [loadFiles]);
 
+  const renderActions = () => {
+    return (
+      <Button onClick={() => setIsUploadDialogOpen(true)} size="sm">
+        <Upload className="mr-2 h-4 w-4" />
+        Upload File
+      </Button>
+    );
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -68,13 +81,19 @@ export const WorkspacePage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Topbar organizationId={orgId} workspaceId={workspaceId} showBackButton />
-      <div className="flex-1 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="flex h-full flex-col">
+      <WorkspaceTopbar 
+        title={workspace?.title || 'Workspace'} 
+        organizationId={orgId} 
+        workspaceId={workspaceId}
+        showBackButton
+        actions={renderActions()} 
+      />
+      
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto p-6">
           <div className="space-y-6">
             <div className="bg-white shadow-sm rounded-lg p-6">
-              <h1 className="text-3xl font-semibold text-gray-900 mb-4">{workspace?.title}</h1>
               <div className="prose max-w-none">
                 {workspace?.content || <p className="text-gray-500 italic">No content yet. Start editing to add content.</p>}
               </div>
@@ -82,12 +101,17 @@ export const WorkspacePage = () => {
 
             <div className="bg-white shadow-sm rounded-lg p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Files</h2>
-              <FileUpload onUploadComplete={handleUploadComplete} />
               <FileList files={files} organizationId={orgId!} onFileDeleted={loadFiles} />
             </div>
           </div>
         </div>
       </div>
+
+      <FileUploadDialog
+        open={isUploadDialogOpen}
+        onClose={() => setIsUploadDialogOpen(false)}
+        onUploadComplete={handleUploadComplete}
+      />
     </div>
   );
 };

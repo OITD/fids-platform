@@ -9,7 +9,9 @@ import { CreateWorkspaceDialog } from './components/CreateWorkspaceDialog';
 import { EditWorkspaceDialog } from './components/EditWorkspaceDialog';
 import { LoadingSpinner } from '../../components/loading-spinner.tsx';
 import { ErrorMessage } from './components/ErrorMessage';
-import { Topbar } from '~/components/topbar.tsx';
+import { WorkspaceTopbar } from '~/components/workspace-topbar';
+import { Button } from '~/components/ui/button';
+import { Plus } from 'lucide-react';
 
 export const OrganizationPage = () => {
   const { orgId } = useParams();
@@ -61,6 +63,17 @@ export const OrganizationPage = () => {
     deleteWorkspace(orgId, workspaceId);
   };
 
+  const renderActions = () => {
+    if (!userScopes.includes('create:resources')) return null;
+    
+    return (
+      <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
+        <Plus className="mr-2 h-4 w-4" />
+        New Workspace
+      </Button>
+    );
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -70,46 +83,48 @@ export const OrganizationPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="container mx-auto px-4 py-8">
-        <ActionBar canCreate={userScopes.includes('create:resources')} onCreateClick={() => setIsCreateDialogOpen(true)} />
-
-        <WorkspaceList
-          workspaces={workspaces}
-          onWorkspaceClick={handleWorkspaceClick}
-          canEdit={userScopes?.includes('edit:resources')}
-          onWorkspaceEdit={handleWorkspaceEdit}
-          canDelete={userScopes?.includes('delete:resources')}
-          onWorkspaceDelete={handleWorkspaceDelete}
-        />
-
-        {isCreateDialogOpen && (
-          <CreateWorkspaceDialog
-            onClose={() => setIsCreateDialogOpen(false)}
-            onWorkspaceCreated={(workspace) => {
-              setWorkspaces((prev) => [workspace, ...prev]);
-              setIsCreateDialogOpen(false);
-            }}
+    <div className="flex h-full flex-col">
+      <WorkspaceTopbar title="Workspaces" actions={renderActions()} />
+      
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto p-6">
+          <WorkspaceList
+            workspaces={workspaces}
+            onWorkspaceClick={handleWorkspaceClick}
+            canEdit={userScopes?.includes('edit:resources')}
+            onWorkspaceEdit={handleWorkspaceEdit}
+            canDelete={userScopes?.includes('delete:resources')}
+            onWorkspaceDelete={handleWorkspaceDelete}
           />
-        )}
-
-        {isEditDialogOpen && editWorkspaceId && workspaces.some((w) => w.id === editWorkspaceId) && (
-          <EditWorkspaceDialog
-            workspace={workspaces.find((workspace) => workspace.id === editWorkspaceId)!} // Ensures workspace is never undefined
-            onClose={() => {
-              console.log('onClose');
-              setEditWorkspaceId(undefined);
-              setIsEditDialogOpen(false);
-            }}
-            onWorkspaceUpdated={(updatedWorkspace) => {
-              console.log('index onWorkspaceUpdated workspace', updatedWorkspace);
-              setWorkspaces((prev) => prev.map((w) => (w.id === updatedWorkspace.id ? updatedWorkspace : w)));
-              setEditWorkspaceId(undefined);
-              setIsEditDialogOpen(false);
-            }}
-          />
-        )}
+        </div>
       </div>
+
+      {isCreateDialogOpen && (
+        <CreateWorkspaceDialog
+          onClose={() => setIsCreateDialogOpen(false)}
+          onWorkspaceCreated={(workspace) => {
+            setWorkspaces((prev) => [workspace, ...prev]);
+            setIsCreateDialogOpen(false);
+          }}
+        />
+      )}
+
+      {isEditDialogOpen && editWorkspaceId && workspaces.some((w) => w.id === editWorkspaceId) && (
+        <EditWorkspaceDialog
+          workspace={workspaces.find((workspace) => workspace.id === editWorkspaceId)!} // Ensures workspace is never undefined
+          onClose={() => {
+            console.log('onClose');
+            setEditWorkspaceId(undefined);
+            setIsEditDialogOpen(false);
+          }}
+          onWorkspaceUpdated={(updatedWorkspace) => {
+            console.log('index onWorkspaceUpdated workspace', updatedWorkspace);
+            setWorkspaces((prev) => prev.map((w) => (w.id === updatedWorkspace.id ? updatedWorkspace : w)));
+            setEditWorkspaceId(undefined);
+            setIsEditDialogOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };
