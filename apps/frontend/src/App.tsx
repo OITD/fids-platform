@@ -1,7 +1,7 @@
 import { LogtoProvider, LogtoConfig, useLogto, UserScope, ReservedResource } from '@logto/react';
 import { Routes, Route } from 'react-router';
 
-import { PageLayout } from '~/layouts/page-layout.tsx';
+import { PageLayout } from '~/layouts/page-layout';
 
 import { Landing } from '~/pages/Landing';
 import { Dashboard } from '~/pages/Dashboard';
@@ -11,8 +11,8 @@ import { OrganizationPage } from '~/pages/OrganizationPage';
 
 import { APP_ENV } from '~/env';
 import { WorkspacePage } from '~/pages/WorkspacePage';
-import RequireAuth from '~/lib/require-auth.tsx';
-import { AdminLayout } from '~/layouts/admin-layout.tsx';
+import RequireAuth from '~/lib/require-auth';
+import { AdminLayout } from '~/layouts/admin-layout';
 import { useEffect, useState } from 'react';
 
 console.log('APP_ENV:', JSON.stringify(APP_ENV, null, 4));
