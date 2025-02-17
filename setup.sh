@@ -3,7 +3,7 @@
 brew install encoredev/tap/encore
 brew install mkcert
 brew install nss # if you use Firefox
-
+mkcert -install
 npm install --global corepack@latest
 
 # .env.example file at the root

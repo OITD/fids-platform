@@ -8,17 +8,6 @@ if [[ ! -f "$ENV_FILE" ]]; then
     exit 1
 fi
 
-# Try to get Encore auth token if not in .env
-if ! grep -v '^PATH=' "$ENV_FILE" | grep -q "ENCORE_AUTH_TOKEN"; then
-    echo "Error: .env file not found at $ENV_FILE"
-    exit 1
-fi
-
-# Load environment variables **but excluding hosts PATH configuration**
-#set -a
-#export "$(grep -v '^PATH=' "$ENV_FILE" | xargs)"
-#set +a
-
 # Load environment variables from .env
 set -a # automatically export all variables
 source $ENV_FILE

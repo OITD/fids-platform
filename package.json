@@ -20,7 +20,11 @@
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
-    "encore.dev": "^1.46.4"
+    "encore.dev": "^1.46.4",
+    "lru-cache": "^11.0.2",
+    "jose": "^5.9.6",
+    "busboy": "^1.6.0",
+    "nanoid": "^5.0.9"
   },
   "devDependencies": {
     "@types/node": "^20.5.7",
