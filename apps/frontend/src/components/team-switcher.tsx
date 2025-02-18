@@ -25,19 +25,25 @@ interface TeamSwitcherProps {
     plan?: string;
   }[];
   onTeamSelect: (teamId: string) => void;
+  activeTeamId?: string;
 }
 
-export function TeamSwitcher({ teams, onTeamSelect }: TeamSwitcherProps) {
+export function TeamSwitcher({ teams, onTeamSelect, activeTeamId }: TeamSwitcherProps) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
   const [newTeamName, setNewTeamName] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [activeTeam, setActiveTeam] = React.useState(teams[0]);
+  
+  // Find active team based on activeTeamId prop
+  const activeTeam = React.useMemo(
+    () => teams.find((team) => team.id === activeTeamId) || teams[0],
+    [teams, activeTeamId]
+  );
+
   const { createOrganization } = useOrganizations();
 
   const handleTeamChange = (team: (typeof teams)[0]) => {
-    setActiveTeam(team);
     onTeamSelect(team.id);
     navigate(`/${team.id}`);
   };
@@ -60,10 +66,6 @@ export function TeamSwitcher({ teams, onTeamSelect }: TeamSwitcherProps) {
     }
   };
 
-  // if (!activeTeam?.name || !activeTeam?.id || !activeTeam?.logo) {
-  //   return <>Loading...</>;
-  // }
-
   return (
     <>
       <SidebarMenu>
@@ -75,11 +77,11 @@ export function TeamSwitcher({ teams, onTeamSelect }: TeamSwitcherProps) {
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  {/*{React.createElement(activeTeam.logo, { className: 'size-4' })}*/}
+                  {activeTeam?.logo && React.createElement(activeTeam.logo, { className: 'size-4' })}
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{activeTeam?.name}</span>
-                  {/*<span className="truncate text-xs">{activeTeam.plan}</span>*/}
+                  <span className="truncate font-semibold">{activeTeam?.name || 'Select Team'}</span>
+                  {activeTeam?.plan && <span className="truncate text-xs">{activeTeam.plan}</span>}
                 </div>
                 <ChevronsUpDown className="ml-auto" />
               </SidebarMenuButton>

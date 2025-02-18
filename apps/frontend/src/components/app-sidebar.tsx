@@ -144,6 +144,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
+  // Find the active organization based on the URL organizationId
+  const activeOrganization = organizations.find((org) => org.id === organizationId);
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -170,6 +173,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             plan: org.plan,
           }))}
           onTeamSelect={handleOrgClick}
+          activeTeamId={organizationId}
         />
       </SidebarHeader>
       <SidebarContent>
