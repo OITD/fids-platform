@@ -30,7 +30,7 @@ export const useResourceApi = () => {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: params,
+            body: JSON.stringify(params),
           },
           undefined,
         );
@@ -38,6 +38,19 @@ export const useResourceApi = () => {
         if (!response.ok) {
           const error = await response.json().catch(() => ({ message: response.statusText }));
           throw new Error(error.message || 'Failed to create organization');
+        }
+
+        return response.json();
+      },
+
+      getOrganizations: async (): Promise<Organization[]> => {
+        const response = await fetchWithToken('/organizations', {
+          method: 'GET',
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ message: response.statusText }));
+          throw new Error(error.message || 'Failed to fetch organizations');
         }
 
         return response.json();
