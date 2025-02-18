@@ -203,13 +203,6 @@ export namespace upload {
         }
 
         /**
-         * Raw endpoint for serving a file from the database
-         */
-        public async get(method: "GET", fileName: string, body?: BodyInit, options?: CallParameters): Promise<globalThis.Response> {
-            return this.baseClient.callAPI(method, `/files/${encodeURIComponent(fileName)}`, body, options)
-        }
-
-        /**
          * Raw endpoint for storing a multiple files to the database.
          * Setting bodyLimit to null allows for unlimited file size.
          */

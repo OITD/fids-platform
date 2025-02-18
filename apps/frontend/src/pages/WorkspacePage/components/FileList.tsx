@@ -5,10 +5,11 @@ import { useFileApi } from '~/api/file';
 interface FileListProps {
   files: FileInfo[];
   organizationId: string;
+  workspaceId: string;
   onFileDeleted: () => void;
 }
 
-export const FileList = ({ files, organizationId, onFileDeleted }: FileListProps) => {
+export const FileList = ({ files, organizationId, workspaceId, onFileDeleted }: FileListProps) => {
   const { deleteFile } = useFileApi();
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
 
@@ -19,7 +20,7 @@ export const FileList = ({ files, organizationId, onFileDeleted }: FileListProps
 
     try {
       setDeletingFile(fileName);
-      await deleteFile(fileName, organizationId);
+      await deleteFile(fileName, organizationId, workspaceId);
       onFileDeleted();
     } catch (error) {
       console.error('Failed to delete file:', error);

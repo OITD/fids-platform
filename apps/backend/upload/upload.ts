@@ -42,11 +42,12 @@ interface FileMetadata {
 export const upload = api.raw(
   {
     method: 'POST',
-    path: '/upload',
+    path: '/upload/:workspaceId',
     auth: true,
   },
   async (req, resp) => {
     const auth = getAuthData() as AuthData;
+    const { workspaceId } = (currentRequest() as APICallMeta).pathParams;
     let uploadedFileName: string | null = null;
 
     try {
@@ -98,12 +99,14 @@ export const upload = api.raw(
             name,
             mime_type,
             uploaded_by,
-            organization_id
+            organization_id,
+            workspace_id
           ) VALUES (
             ${fileName},
             ${mimeType},
             ${auth.userID},
-            ${auth.organizationID}
+            ${auth.organizationID},
+            ${workspaceId}
           )
         `;
       } catch (dbError) {
@@ -212,37 +215,37 @@ export const saveMultiple = api.raw(
 );
 
 // Raw endpoint for serving a file from the database
-export const get = api.raw({ auth: true, expose: true, method: 'GET', path: '/files/:fileName' }, async (req, resp) => {
-  try {
-    const { name } = (currentRequest() as APICallMeta).pathParams;
-    const row = await DB.queryRow`
-          SELECT data
-          FROM files
-          WHERE name = ${name}`;
-    if (!row) {
-      resp.writeHead(404);
-      resp.end('File not found');
-      return;
-    }
-
-    resp.writeHead(200, { 'Content-Type': row.mime_type });
-    const chunk = Buffer.from(row.data);
-    resp.writeHead(200, { Connection: 'close' });
-    resp.end(chunk);
-  } catch (err) {
-    resp.writeHead(500);
-    resp.end((err as Error).message);
-  }
-});
+// export const get = api.raw({ auth: true, expose: true, method: 'GET', path: '/files/:fileName' }, async (req, resp) => {
+//   try {
+//     const { name } = (currentRequest() as APICallMeta).pathParams;
+//     const row = await DB.queryRow`
+//           SELECT data
+//           FROM files
+//           WHERE name = ${name}`;
+//     if (!row) {
+//       resp.writeHead(404);
+//       resp.end('File not found');
+//       return;
+//     }
+//
+//     resp.writeHead(200, { 'Content-Type': row.mime_type });
+//     const chunk = Buffer.from(row.data);
+//     resp.writeHead(200, { Connection: 'close' });
+//     resp.end(chunk);
+//   } catch (err) {
+//     resp.writeHead(500);
+//     resp.end((err as Error).message);
+//   }
+// });
 
 // List files from database
 export const listDBFiles = api(
   {
     auth: true,
     method: 'GET',
-    path: '/db-files',
+    path: '/files/:workspaceId',
   },
-  async (): Promise<{ files: FileMetadata[] }> => {
+  async (params: { workspaceId: string }): Promise<{ files: FileMetadata[] }> => {
     const auth = getAuthData() as AuthData;
 
     try {
@@ -257,6 +260,7 @@ export const listDBFiles = api(
           created_at as "createdAt"
         FROM files
         WHERE organization_id = ${auth.organizationID}
+        AND workspace_id = ${params.workspaceId}
         ORDER BY created_at DESC
       `;
 
@@ -309,18 +313,19 @@ export const deleteFile = api(
   {
     auth: true,
     method: 'DELETE',
-    path: '/files/:fileName',
+    path: '/files/:workspaceId/:fileName',
   },
-  async (params: { fileName: string }): Promise<void> => {
+  async (params: { fileName: string; workspaceId: string }): Promise<void> => {
     const auth = getAuthData() as AuthData;
 
     try {
-      // First check if the file exists and belongs to this organization
+      // Check if the file exists and belongs to this workspace
       const file = await DB.queryRow<{ name: string }>`
         SELECT name
         FROM files
         WHERE name = ${params.fileName}
         AND organization_id = ${auth.organizationID}
+        AND workspace_id = ${params.workspaceId}
         LIMIT 1
       `;
 
@@ -328,14 +333,15 @@ export const deleteFile = api(
         throw APIError.notFound('File not found');
       }
 
-      // Delete from bucket first
+      // Delete from bucket
       await filesBucket.remove(params.fileName);
 
-      // Then delete from database
+      // Delete from database
       await DB.exec`
         DELETE FROM files
         WHERE name = ${params.fileName}
         AND organization_id = ${auth.organizationID}
+        AND workspace_id = ${params.workspaceId}
       `;
     } catch (error) {
       if (error instanceof APIError) {

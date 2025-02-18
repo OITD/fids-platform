@@ -8,9 +8,10 @@ interface FileUploadDialogProps {
   open: boolean;
   onClose: () => void;
   onUploadComplete: () => void;
+  workspaceId: string;
 }
 
-export const FileUploadDialog = ({ open, onClose, onUploadComplete }: FileUploadDialogProps) => {
+export const FileUploadDialog = ({ open, onClose, onUploadComplete, workspaceId }: FileUploadDialogProps) => {
   const { orgId } = useParams();
   const { uploadFile } = useFileApi();
   const [isUploading, setIsUploading] = useState(false);
@@ -27,7 +28,7 @@ export const FileUploadDialog = ({ open, onClose, onUploadComplete }: FileUpload
     setError(null);
 
     try {
-      await uploadFile(orgId, formData);
+      await uploadFile(orgId, workspaceId, formData);
       onUploadComplete();
       form.reset();
       onClose();

@@ -26,14 +26,14 @@ export const WorkspacePage = () => {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
 
   const loadFiles = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId || !workspaceId) return;
     try {
-      const files = await listFiles(orgId);
+      const files = await listFiles(orgId, workspaceId);
       setFiles(files);
     } catch (err) {
       console.error('Failed to load files:', err);
     }
-  }, [orgId, listFiles]);
+  }, [orgId, workspaceId, listFiles]);
 
   const fetchData = useCallback(async () => {
     if (!orgId || !workspaceId || !isAuthenticated) return;
@@ -42,10 +42,13 @@ export const WorkspacePage = () => {
     setError(null);
 
     try {
-      const [scopes, workspaceData] = await Promise.all([getUserOrganizationScopes(orgId), getWorkspace(orgId, workspaceId)]);
+      const [scopes, workspaceData] = await Promise.all([
+        getUserOrganizationScopes(orgId),
+        getWorkspace(orgId, workspaceId)
+      ]);
 
       setUserScopes(scopes);
-      setWorkspace(workspaceData as Workspace);
+      setWorkspace(workspaceData);
       await loadFiles();
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch data');
@@ -100,7 +103,12 @@ export const WorkspacePage = () => {
 
             <div className="bg-white shadow-sm rounded-lg p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Files</h2>
-              <FileList files={files} organizationId={orgId!} onFileDeleted={loadFiles} />
+              <FileList 
+                files={files} 
+                organizationId={orgId!} 
+                workspaceId={workspaceId!} 
+                onFileDeleted={loadFiles} 
+              />
             </div>
           </div>
         </div>
@@ -110,6 +118,7 @@ export const WorkspacePage = () => {
         open={isUploadDialogOpen}
         onClose={() => setIsUploadDialogOpen(false)}
         onUploadComplete={handleUploadComplete}
+        workspaceId={workspaceId!}
       />
     </div>
   );

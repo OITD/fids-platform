@@ -60,7 +60,7 @@ export const useWorkspaceApi = () => {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: params,
+            body: JSON.stringify(params),
           },
           orgId,
         );
