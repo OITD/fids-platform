@@ -2,14 +2,7 @@ import * as React from 'react';
 import { ChevronsUpDown, Plus, GalleryVerticalEnd } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '~/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import {
@@ -22,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '~/components/ui/sidebar';
-import { useOrganizations } from '~/hooks/useOrganizations';
+import { useOrganizations } from '~/hooks/use-organizations.ts';
 
 interface TeamSwitcherProps {
   teams: {
@@ -43,7 +36,7 @@ export function TeamSwitcher({ teams, onTeamSelect }: TeamSwitcherProps) {
   const [activeTeam, setActiveTeam] = React.useState(teams[0]);
   const { createOrganization } = useOrganizations();
 
-  const handleTeamChange = (team: typeof teams[0]) => {
+  const handleTeamChange = (team: (typeof teams)[0]) => {
     setActiveTeam(team);
     onTeamSelect(team.id);
     navigate(`/${team.id}`);
@@ -78,7 +71,7 @@ export function TeamSwitcher({ teams, onTeamSelect }: TeamSwitcherProps) {
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  {React.createElement(activeTeam.logo || GalleryVerticalEnd, { className: "size-4" })}
+                  {React.createElement(activeTeam.logo || GalleryVerticalEnd, { className: 'size-4' })}
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{activeTeam.name}</span>
@@ -97,7 +90,7 @@ export function TeamSwitcher({ teams, onTeamSelect }: TeamSwitcherProps) {
               {teams.map((team, index) => (
                 <DropdownMenuItem key={team.name} onClick={() => handleTeamChange(team)} className="gap-2 p-2">
                   <div className="flex size-6 items-center justify-center rounded-sm border">
-                    {React.createElement(team.logo || GalleryVerticalEnd, { className: "size-4 shrink-0" })}
+                    {React.createElement(team.logo || GalleryVerticalEnd, { className: 'size-4 shrink-0' })}
                   </div>
                   {team.name}
                   <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
@@ -119,31 +112,20 @@ export function TeamSwitcher({ teams, onTeamSelect }: TeamSwitcherProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create team</DialogTitle>
-            <DialogDescription>
-              Add a new team to manage projects and collaborate with others.
-            </DialogDescription>
+            <DialogDescription>Add a new team to manage projects and collaborate with others.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateTeam}>
             <div className="space-y-4 py-2 pb-4">
               <div className="space-y-2">
-                <Input
-                  id="name"
-                  placeholder="Team name"
-                  value={newTeamName}
-                  onChange={(e) => setNewTeamName(e.target.value)}
-                />
+                <Input id="name" placeholder="Team name" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} />
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowNewTeamDialog(false)}
-                type="button"
-              >
+              <Button variant="outline" onClick={() => setShowNewTeamDialog(false)} type="button">
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create"}
+                {isSubmitting ? 'Creating...' : 'Create'}
               </Button>
             </DialogFooter>
           </form>

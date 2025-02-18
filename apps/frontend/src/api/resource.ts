@@ -7,8 +7,12 @@ export type Organization = {
   id: string;
   name: string;
   description?: string;
-  memberCount?: number;
-  role?: string;
+  branding?: {
+    logoUrl?: string;
+    darkLogoUrl?: string;
+    favicon?: string;
+    darkFavicon?: string;
+  };
 };
 
 export interface CreateOrganizationParams {
@@ -44,16 +48,33 @@ export const useResourceApi = () => {
       },
 
       getOrganizations: async (): Promise<Organization[]> => {
-        const response = await fetchWithToken('/organizations', {
-          method: 'GET',
-        });
+        const response = await fetchWithToken(
+          '/organizations',
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            method: 'GET',
+          },
+          undefined,
+        );
 
         if (!response.ok) {
           const error = await response.json().catch(() => ({ message: response.statusText }));
           throw new Error(error.message || 'Failed to fetch organizations');
         }
 
-        return response.json();
+        const data = await response.json();
+
+        console.dir(data);
+
+        // Map the full Logto organization data to our simplified Organization type
+        return data.organizations.map((org: any) => ({
+          id: org.id,
+          name: org.name,
+          description: org.description,
+          branding: org.branding,
+        }));
       },
 
       getUserOrganizationScopes: async (organizationId: string): Promise<string[]> => {

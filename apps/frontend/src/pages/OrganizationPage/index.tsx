@@ -60,6 +60,7 @@ export const OrganizationPage = () => {
   };
 
   const handleWorkspaceDelete = (workspaceId: string) => {
+    if (!orgId) return;
     deleteWorkspace(orgId, workspaceId);
   };
 

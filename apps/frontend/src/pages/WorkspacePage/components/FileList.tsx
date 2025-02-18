@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { FileInfo } from '~/api/workspace';
-import { useWorkspaceApi } from '~/api/workspace';
+import type { FileInfo } from '~/api/file';
+import { useFileApi } from '~/api/file';
 
 interface FileListProps {
   files: FileInfo[];
@@ -9,7 +9,7 @@ interface FileListProps {
 }
 
 export const FileList = ({ files, organizationId, onFileDeleted }: FileListProps) => {
-  const { deleteFile } = useWorkspaceApi();
+  const { deleteFile } = useFileApi();
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
 
   const handleDelete = async (fileName: string) => {

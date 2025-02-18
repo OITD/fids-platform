@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useResourceApi } from '~/api/resource';
 import { useFileApi, type FileInfo } from '~/api/file';
 import { useWorkspaceApi, type Workspace } from '~/api/workspace';
-import { FileUpload } from './components/FileUpload';
 import { FileList } from './components/FileList';
 import { useLogto } from '@logto/react';
 import { LoadingSpinner } from '~/components/loading-spinner.tsx';
@@ -46,7 +45,7 @@ export const WorkspacePage = () => {
       const [scopes, workspaceData] = await Promise.all([getUserOrganizationScopes(orgId), getWorkspace(orgId, workspaceId)]);
 
       setUserScopes(scopes);
-      setWorkspace(workspaceData);
+      setWorkspace(workspaceData as Workspace);
       await loadFiles();
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch data');

@@ -1,7 +1,8 @@
 import { useLogto } from '@logto/react';
 import { useState, useCallback } from 'react';
 import type { OrganizationData } from '~/types/organization';
-import { useResourceApi } from '~/api/resource';
+
+import { useResourceApi } from '../api/resource';
 
 export function useOrganizations() {
   const { fetchUserInfo } = useLogto();
@@ -24,23 +25,26 @@ export function useOrganizations() {
     }
   }, [getOrganizations]);
 
-  const createNewOrganization = useCallback(async (name: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const newOrg = await createOrganization({ name });
-      setOrganizations(prev => [...prev, newOrg]);
-      return newOrg;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create organization';
-      setError(message);
-      console.error('Error creating organization:', err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [createOrganization]);
+  const createNewOrganization = useCallback(
+    async (name: string) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const newOrg = await createOrganization({ name });
+        setOrganizations((prev) => [...prev, newOrg]);
+        return newOrg;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create organization';
+        setError(message);
+        console.error('Error creating organization:', err);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [createOrganization],
+  );
 
   return {
     organizations,
@@ -49,4 +53,4 @@ export function useOrganizations() {
     loadOrganizations,
     createOrganization: createNewOrganization,
   };
-} 
+}
