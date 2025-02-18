@@ -39,11 +39,12 @@ interface FileMetadata {
  * Raw endpoint for storing a single file to the database.
  * Setting bodyLimit to null allows for unlimited file size.
  */
-export const upload = api.raw(
+export const uploadOne = api.raw(
   {
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'POST',
     path: '/upload/:workspaceId',
-    auth: true,
   },
   async (req, resp) => {
     const auth = getAuthData() as AuthData;
@@ -154,7 +155,7 @@ export const upload = api.raw(
  * Raw endpoint for storing a multiple files to the database.
  * Setting bodyLimit to null allows for unlimited file size.
  */
-export const saveMultiple = api.raw(
+export const uploadMany = api.raw(
   { auth: true, expose: true, method: 'POST', path: '/upload-multiple', bodyLimit: null },
   async (req, res) => {
     const bb = busboy({ headers: req.headers });
@@ -214,34 +215,11 @@ export const saveMultiple = api.raw(
   },
 );
 
-// Raw endpoint for serving a file from the database
-// export const get = api.raw({ auth: true, expose: true, method: 'GET', path: '/files/:fileName' }, async (req, resp) => {
-//   try {
-//     const { name } = (currentRequest() as APICallMeta).pathParams;
-//     const row = await DB.queryRow`
-//           SELECT data
-//           FROM files
-//           WHERE name = ${name}`;
-//     if (!row) {
-//       resp.writeHead(404);
-//       resp.end('File not found');
-//       return;
-//     }
-//
-//     resp.writeHead(200, { 'Content-Type': row.mime_type });
-//     const chunk = Buffer.from(row.data);
-//     resp.writeHead(200, { Connection: 'close' });
-//     resp.end(chunk);
-//   } catch (err) {
-//     resp.writeHead(500);
-//     resp.end((err as Error).message);
-//   }
-// });
-
 // List files from database
-export const listDBFiles = api(
+export const getAll = api(
   {
-    auth: true,
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'GET',
     path: '/files/:workspaceId',
   },
@@ -279,39 +257,11 @@ export const listDBFiles = api(
   },
 );
 
-// List files from bucket
-export const listBucketFiles = api(
-  {
-    auth: true,
-    method: 'GET',
-    path: '/bucket-files',
-  },
-  async (): Promise<{ files: FileMetadata[] }> => {
-    const auth = getAuthData() as AuthData;
-    const files: FileMetadata[] = [];
-
-    try {
-      for await (const entry of filesBucket.list({})) {
-        files.push({
-          name: entry.name,
-          url: filesBucket.publicUrl(entry.name),
-          uploadedBy: auth.userID,
-          organizationId: auth.organizationID,
-        });
-      }
-    } catch (err) {
-      console.error('Failed to list bucket files:', err);
-      return { files: [] };
-    }
-
-    return { files };
-  },
-);
-
 // Add this new endpoint for deleting files
-export const deleteFile = api(
+export const deleteOne = api(
   {
-    auth: true,
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'DELETE',
     path: '/files/:workspaceId/:fileName',
   },
@@ -352,3 +302,57 @@ export const deleteFile = api(
     }
   },
 );
+
+// Raw endpoint for serving a file from the database
+// export const get = api.raw({ auth: true, expose: true, method: 'GET', path: '/files/:fileName' }, async (req, resp) => {
+//   try {
+//     const { name } = (currentRequest() as APICallMeta).pathParams;
+//     const row = await DB.queryRow`
+//           SELECT data
+//           FROM files
+//           WHERE name = ${name}`;
+//     if (!row) {
+//       resp.writeHead(404);
+//       resp.end('File not found');
+//       return;
+//     }
+//
+//     resp.writeHead(200, { 'Content-Type': row.mime_type });
+//     const chunk = Buffer.from(row.data);
+//     resp.writeHead(200, { Connection: 'close' });
+//     resp.end(chunk);
+//   } catch (err) {
+//     resp.writeHead(500);
+//     resp.end((err as Error).message);
+//   }
+// });
+
+// List files from bucket
+// export const listBucketFiles = api(
+//   {
+//     expose: true, // Is publicly accessible
+//     auth: true, // Auth handler validation is required
+//     method: 'GET',
+//     path: '/bucket-files',
+//   },
+//   async (): Promise<{ files: FileMetadata[] }> => {
+//     const auth = getAuthData() as AuthData;
+//     const files: FileMetadata[] = [];
+//
+//     try {
+//       for await (const entry of filesBucket.list({})) {
+//         files.push({
+//           name: entry.name,
+//           url: filesBucket.publicUrl(entry.name),
+//           uploadedBy: auth.userID,
+//           organizationId: auth.organizationID,
+//         });
+//       }
+//     } catch (err) {
+//       console.error('Failed to list bucket files:', err);
+//       return { files: [] };
+//     }
+//
+//     return { files };
+//   },
+// );

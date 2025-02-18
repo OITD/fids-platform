@@ -1,8 +1,9 @@
 import { useLogto } from '@logto/react';
 import { useCallback } from 'react';
+import Client from '../lib/client';
+import getRequestClient from '../lib/get-request-client';
 
 import { APP_ENV } from '../env';
-import getRequestClient from '../lib/get-request-client';
 
 const API_BASE_URL = APP_ENV.api.baseUrl;
 const APP_API_RESOURCE_INDICATOR = APP_ENV.api.resourceIndicator;
@@ -25,22 +26,26 @@ interface FetchOptions extends RequestInit {
 export const useApi = () => {
   const { getAccessToken, getOrganizationToken } = useLogto();
 
+  const getClient = useCallback(async (organizationId?: string): Promise<Client> => {
+    let token: string | undefined;
+
+    if (organizationId) {
+      token = await getOrganizationToken(organizationId);
+    } else {
+      token = await getAccessToken();
+    }
+
+    if (!token) {
+      throw new Error(organizationId ? 'User is not a member of the organization' : 'Failed to get access token');
+    }
+
+    return getRequestClient(token);
+  }, [getAccessToken, getOrganizationToken]);
+
   const fetchWithToken = useCallback(
     async (path: string, options: FetchOptions = {}, organizationId?: string) => {
       try {
-        let token: string | undefined;
-
-        if (organizationId) {
-          token = await getOrganizationToken(organizationId);
-        } else {
-          token = await getAccessToken(APP_API_RESOURCE_INDICATOR);
-        }
-
-        if (!token) {
-          throw new ApiRequestError(organizationId ? 'User is not a member of the organization' : 'Failed to get access token');
-        }
-
-        const client = getRequestClient(token!);
+        const client = await getClient(organizationId);
 
         const adminData = await client.admin.getDashboardData();
 
@@ -87,5 +92,5 @@ export const useApi = () => {
     [getAccessToken, getOrganizationToken],
   );
 
-  return { fetchWithToken };
+  return { getClient, fetchWithToken };
 };

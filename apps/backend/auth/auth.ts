@@ -66,23 +66,35 @@ const getJWKS = () => {
 };
 
 const decodeJwtPayload = (token: string) => {
-  const [, payloadBase64] = token.split('.');
-
-  if (!payloadBase64) {
-    throw APIError.invalidArgument('decodeJwtPayload: Invalid token format');
+  // Split token into parts
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    throw APIError.invalidArgument('decodeJwtPayload: Invalid JWT format - token must have 3 parts');
   }
 
-  try {
-    const payloadJson = Buffer.from(payloadBase64, 'base64').toString('utf-8');
+  const [, payloadBase64] = parts;
 
+  // Remove debug logging
+  // console.log(' ');
+  // console.log(' ');
+  // console.log(payloadBase64);
+  // console.log(' ');
+  // console.log(' ');
+
+  try {
+    // Add padding if needed
+    const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64.length % 4;
+    const paddedBase64 = pad ? base64 + '='.repeat(4 - pad) : base64;
+
+    const payloadJson = Buffer.from(paddedBase64, 'base64').toString('utf-8');
     return JSON.parse(payloadJson);
   } catch (error) {
     if (error instanceof Error) {
-      throw APIError.invalidArgument('decodeJwtPayload: Failed to decode token payload', error);
+      throw APIError.invalidArgument(`decodeJwtPayload: Failed to decode token payload: ${error.message}`);
     }
+    throw APIError.invalidArgument('decodeJwtPayload: Failed to decode token payload');
   }
-
-  return {};
 };
 
 const verifyJwt = async (token: string | Uint8Array, audience: string) => {
@@ -125,6 +137,8 @@ export const auth = authHandler<AuthParams, AuthData>(async (params): Promise<Au
   if (!token) {
     throw APIError.unauthenticated('Authorization token missing');
   }
+
+  log.debug('Received token', { token: token.substring(0, 20) + '...' }); // Only log first 20 chars for security
 
   // Check if token type is Bearer and return the JWT portion
   const JWT = extractJWT(token);

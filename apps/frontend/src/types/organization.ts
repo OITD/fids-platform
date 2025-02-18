@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 export interface OrganizationData {
   id: string;
   name: string;
+  description: string;
   logo?: LucideIcon;
   plan?: string;
 }
@@ -28,4 +29,4 @@ export interface UserData {
   name: string;
   email: string;
   avatar?: string;
-} 
+}

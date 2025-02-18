@@ -18,11 +18,12 @@ export const DB = new SQLDatabase('workspaces', {
 });
 
 // Get single workspace endpoint
-export const getWorkspace = api(
+export const getOne = api(
   {
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'GET',
     path: '/workspace/:id',
-    auth: true,
   },
   async (params: { id: string }): Promise<Workspace & { content: string }> => {
     const auth = getAuthData() as AuthData;
@@ -49,11 +50,12 @@ export const getWorkspace = api(
 );
 
 // List workspaces endpoint
-export const listWorkspaces = api(
+export const getAll = api(
   {
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'GET',
     path: '/workspaces',
-    auth: true,
   },
   async (): Promise<{ workspaces: Workspace[] }> => {
     const auth = getAuthData() as AuthData;
@@ -81,11 +83,12 @@ export const listWorkspaces = api(
 );
 
 // Create workspace endpoint
-export const createWorkspace = api(
+export const createOne = api(
   {
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'POST',
     path: '/workspaces',
-    auth: true,
   },
   async (req: CreateWorkspaceRequest): Promise<CreateWorkspaceResponse> => {
     const auth = getAuthData() as AuthData;
@@ -131,11 +134,12 @@ export const createWorkspace = api(
 );
 
 // Update workspace endpoint
-export const updateWorkspace = api(
+export const updateOne = api(
   {
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'PUT',
     path: '/workspace/:id',
-    auth: true,
   },
   async (req: UpdateWorkspaceRequest): Promise<UpdateWorkspaceResponse> => {
     const auth = getAuthData() as AuthData;
@@ -174,11 +178,12 @@ export const updateWorkspace = api(
 );
 
 // Delete workspace endpoint
-export const deleteWorkspace = api(
+export const deleteOne = api(
   {
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'DELETE',
     path: '/workspace/:id',
-    auth: true,
   },
   async (params: { id: string }): Promise<DeleteWorkspaceResponse> => {
     const auth = getAuthData() as AuthData;

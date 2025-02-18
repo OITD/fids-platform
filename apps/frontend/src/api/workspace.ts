@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-
-import { useApi } from './base';
+import { useCallback } from 'react';
+import { useLogto } from '@logto/react';
+import getRequestClient from '../lib/get-request-client';
 import type * as Types from '~encore/clients';
 
 export interface Workspace {
@@ -22,91 +22,66 @@ export interface GetWorkspaceResponse {
 }
 
 export const useWorkspaceApi = () => {
-  const { fetchWithToken } = useApi();
+  const { getOrganizationToken } = useLogto();
 
-  return useMemo(
-    () => ({
-      getWorkspaces: async (organizationId: string): Promise<Types.auth.Workspace[]> => {
-        const response = await fetchWithToken(
-          '/workspaces',
-          {
-            method: 'GET',
-          },
-          organizationId,
-        );
+  return {
+    getWorkspaces: useCallback(
+      async (organizationId: string): Promise<Types.auth.Workspace[]> => {
+        const token = await getOrganizationToken(organizationId);
+        if (!token) throw new Error('User is not a member of the organization');
 
-        const data = await response.json();
-        return data.workspaces;
+        const client = getRequestClient(token);
+        const response = await client.workspace.getAll();
+        return response.workspaces;
       },
+      [getOrganizationToken],
+    ),
 
-      getWorkspace: async (orgId: string, workspaceId: string): Promise<GetWorkspaceResponse> => {
-        const response = await fetchWithToken(
-          `/workspace/${workspaceId}`,
-          {
-            method: 'GET',
-          },
-          orgId,
-        );
+    getWorkspace: useCallback(
+      async (orgId: string, workspaceId: string): Promise<Types.auth.Workspace> => {
+        const token = await getOrganizationToken(orgId);
+        if (!token) throw new Error('User is not a member of the organization');
 
-        const data = await response.json();
-        return data.workspace;
+        const client = getRequestClient(token);
+        const response = await client.workspace.getOne({ id: workspaceId });
+        return response.workspace;
       },
+      [getOrganizationToken],
+    ),
 
-      createWorkspace: async (orgId: string, params: CreateWorkspaceParams): Promise<Workspace> => {
-        const response = await fetchWithToken(
-          '/workspaces',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(params),
-          },
-          orgId,
-        );
+    createWorkspace: useCallback(
+      async (orgId: string, params: Types.auth.CreateWorkspaceParams): Promise<Types.auth.Workspace> => {
+        const token = await getOrganizationToken(orgId);
+        if (!token) throw new Error('User is not a member of the organization');
 
-        const data = await response.json();
-        return data.workspace;
+        const client = getRequestClient(token);
+        const response = await client.workspace.createOne(params);
+        return response.workspace;
       },
+      [getOrganizationToken],
+    ),
 
-      updateWorkspace: async (
-        orgId: string,
-        workspaceId: string,
-        data: { title?: string; content?: string },
-      ): Promise<Workspace> => {
-        const response = await fetchWithToken(
-          `/workspace/${workspaceId}`,
-          {
-            method: 'PUT',
-            body: JSON.stringify(data),
-          },
-          orgId,
-        );
+    updateWorkspace: useCallback(
+      async (orgId: string, workspaceId: string, data: Types.auth.UpdateWorkspaceParams) => {
+        const token = await getOrganizationToken(orgId);
+        if (!token) throw new Error('User is not a member of the organization');
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to update workspace');
-        }
-
-        const result = await response.json();
-        return result.workspace;
+        const client = getRequestClient(token);
+        const response = await client.workspace.updateOne({ id: workspaceId, ...data });
+        return response.workspace;
       },
+      [getOrganizationToken],
+    ),
 
-      deleteWorkspace: async (orgId: string, workspaceId: string): Promise<void> => {
-        const response = await fetchWithToken(
-          `/workspace/${workspaceId}`,
-          {
-            method: 'DELETE',
-          },
-          orgId,
-        );
+    deleteWorkspace: useCallback(
+      async (orgId: string, workspaceId: string): Promise<void> => {
+        const token = await getOrganizationToken(orgId);
+        if (!token) throw new Error('User is not a member of the organization');
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to delete workspace');
-        }
+        const client = getRequestClient(token);
+        await client.workspace.deleteOne({ id: workspaceId });
       },
-    }),
-    [fetchWithToken],
-  );
+      [getOrganizationToken],
+    ),
+  };
 };

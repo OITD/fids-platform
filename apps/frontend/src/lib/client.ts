@@ -34,7 +34,9 @@ export default class Client {
     public readonly frontend: frontend.ServiceClient
     public readonly hello: hello.ServiceClient
     public readonly logto: logto.ServiceClient
+    public readonly organization: organization.ServiceClient
     public readonly upload: upload.ServiceClient
+    public readonly workspace: workspace.ServiceClient
 
 
     /**
@@ -49,7 +51,9 @@ export default class Client {
         this.frontend = new frontend.ServiceClient(base)
         this.hello = new hello.ServiceClient(base)
         this.logto = new logto.ServiceClient(base)
+        this.organization = new organization.ServiceClient(base)
         this.upload = new upload.ServiceClient(base)
+        this.workspace = new workspace.ServiceClient(base)
     }
 }
 
@@ -193,7 +197,21 @@ export namespace logto {
     }
 }
 
-export namespace upload {
+export namespace organization {
+    export interface CreateOrganizationParams {
+        name: string
+        description: string
+    }
+
+    export interface Organization {
+        id: string
+        name: string
+        description: string
+    }
+
+    export interface OrganizationsResponse {
+        organizations: Organization[]
+    }
 
     export class ServiceClient {
         private baseClient: BaseClient
@@ -203,11 +221,190 @@ export namespace upload {
         }
 
         /**
+         * Create organization endpoint
+         */
+        public async createOne(params: CreateOrganizationParams): Promise<Organization> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("POST", `/organizations`, JSON.stringify(params))
+            return await resp.json() as Organization
+        }
+
+        /**
+         * Update getOrganizations endpoint
+         */
+        public async getAll(): Promise<OrganizationsResponse> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/organizations`)
+            return await resp.json() as OrganizationsResponse
+        }
+
+        /**
+         * Get a single organization by ID
+         */
+        public async getOne(id: string): Promise<Organization> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/organizations/${encodeURIComponent(id)}`)
+            return await resp.json() as Organization
+        }
+    }
+}
+
+export namespace upload {
+    export interface FileMetadata {
+        id: number
+        name: string
+        url: string
+        mimeType?: string
+        uploadedBy: string
+        organizationId: string
+        createdAt: string
+    }
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+        }
+
+        /**
+         * Add this new endpoint for deleting files
+         */
+        public async deleteOne(workspaceId: string, fileName: string): Promise<void> {
+            await this.baseClient.callTypedAPI("DELETE", `/files/${encodeURIComponent(workspaceId)}/${encodeURIComponent(fileName)}`)
+        }
+
+        /**
+         * List files from database
+         */
+        public async getAll(workspaceId: string): Promise<{
+    files: FileMetadata[]
+}> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/files/${encodeURIComponent(workspaceId)}`)
+            return await resp.json() as {
+    files: FileMetadata[]
+}
+        }
+
+        /**
          * Raw endpoint for storing a multiple files to the database.
          * Setting bodyLimit to null allows for unlimited file size.
          */
-        public async saveMultiple(method: "POST", body?: BodyInit, options?: CallParameters): Promise<globalThis.Response> {
+        public async uploadMany(method: "POST", body?: BodyInit, options?: CallParameters): Promise<globalThis.Response> {
             return this.baseClient.callAPI(method, `/upload-multiple`, body, options)
+        }
+
+        /**
+         * Raw endpoint for storing a single file to the database.
+         * Setting bodyLimit to null allows for unlimited file size.
+         */
+        public async uploadOne(method: "POST", workspaceId: string, body?: BodyInit, options?: CallParameters): Promise<globalThis.Response> {
+            return this.baseClient.callAPI(method, `/upload/${encodeURIComponent(workspaceId)}`, body, options)
+        }
+    }
+}
+
+export namespace workspace {
+    export interface CreateWorkspaceRequest {
+        title: string
+        content: string
+    }
+
+    export interface CreateWorkspaceResponse {
+        workspace: Workspace
+    }
+
+    export interface DeleteWorkspaceResponse {
+        success: boolean
+    }
+
+    export interface UpdateWorkspaceRequest {
+        title: string
+        content: string
+    }
+
+    export interface UpdateWorkspaceResponse {
+        workspace: Workspace
+    }
+
+    export interface Workspace {
+        id: string
+        title: string
+        preview: string
+        updatedAt: string
+        updatedBy: string
+        content: string
+    }
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+        }
+
+        /**
+         * Create workspace endpoint
+         */
+        public async createOne(params: CreateWorkspaceRequest): Promise<CreateWorkspaceResponse> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("POST", `/workspaces`, JSON.stringify(params))
+            return await resp.json() as CreateWorkspaceResponse
+        }
+
+        /**
+         * Delete workspace endpoint
+         */
+        public async deleteOne(id: string): Promise<DeleteWorkspaceResponse> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("DELETE", `/workspace/${encodeURIComponent(id)}`)
+            return await resp.json() as DeleteWorkspaceResponse
+        }
+
+        /**
+         * List workspaces endpoint
+         */
+        public async getAll(): Promise<{
+    workspaces: Workspace[]
+}> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/workspaces`)
+            return await resp.json() as {
+    workspaces: Workspace[]
+}
+        }
+
+        /**
+         * Get single workspace endpoint
+         */
+        public async getOne(id: string): Promise<{
+    id: string
+    title: string
+    preview: string
+    updatedAt: string
+    updatedBy: string
+    content: string
+}> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/workspace/${encodeURIComponent(id)}`)
+            return await resp.json() as {
+    id: string
+    title: string
+    preview: string
+    updatedAt: string
+    updatedBy: string
+    content: string
+}
+        }
+
+        /**
+         * Update workspace endpoint
+         */
+        public async updateOne(id: string, params: UpdateWorkspaceRequest): Promise<UpdateWorkspaceResponse> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("PUT", `/workspace/${encodeURIComponent(id)}`, JSON.stringify(params))
+            return await resp.json() as UpdateWorkspaceResponse
         }
     }
 }

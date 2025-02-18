@@ -89,6 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           orgs.map((org) => ({
             id: org.id,
             name: org.name,
+            description: org.description,
             logo: GalleryVerticalEnd,
             plan: 'Free',
           })),

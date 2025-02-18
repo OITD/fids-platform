@@ -1,83 +1,46 @@
-import { useMemo } from 'react';
+import { useCallback } from 'react';
 import { useLogto } from '@logto/react';
 
-import { useApi } from './base';
+import getRequestClient from '../lib/get-request-client';
+import { organization } from '../lib/client';
 
-export type Organization = {
-  id: string;
-  name: string;
-  description?: string;
-  branding?: {
-    logoUrl?: string;
-    darkLogoUrl?: string;
-    favicon?: string;
-    darkFavicon?: string;
-  };
-};
-
-export interface CreateOrganizationParams {
-  name: string;
-  description?: string;
-}
+import Organization = organization.Organization;
+import CreateOrganizationParams = organization.CreateOrganizationParams;
+import { OrganizationData } from '~/types/organization';
 
 export const useResourceApi = () => {
-  const { fetchWithToken } = useApi();
-  const { getOrganizationToken, getOrganizationTokenClaims } = useLogto();
+  const { getAccessToken, getOrganizationToken, getOrganizationTokenClaims, fetchUserInfo } = useLogto();
 
-  return useMemo(
-    () => ({
-      createOrganization: async (params: CreateOrganizationParams): Promise<Organization> => {
-        const response = await fetchWithToken(
-          '/organizations',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(params),
-          },
-          undefined,
-        );
+  return {
+    createOrganization: useCallback(
+      async (params: CreateOrganizationParams): Promise<Organization> => {
+        const token = await getAccessToken();
+        if (!token) throw new Error('User not authenticated');
 
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({ message: response.statusText }));
-          throw new Error(error.message || 'Failed to create organization');
-        }
+        const client = getRequestClient(token);
+        const response = await client.organization.createOne(params);
 
-        return response.json();
+        console.log('createOrganization response', response);
+
+        return response.organization;
       },
+      [getAccessToken],
+    ),
 
-      getOrganizations: async (): Promise<Organization[]> => {
-        const response = await fetchWithToken(
-          '/organizations',
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            method: 'GET',
-          },
-          undefined,
-        );
+    getOrganizations: useCallback(async (): Promise<Organization[]> => {
+      const token = await getAccessToken();
+      if (!token) throw new Error('User not authenticated');
 
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({ message: response.statusText }));
-          throw new Error(error.message || 'Failed to fetch organizations');
-        }
+      const userInfo = await fetchUserInfo();
+      const organizationData = (userInfo?.organization_data || []) as OrganizationData[];
 
-        const data = await response.json();
+      console.log('getOrganizations response', organizationData);
 
-        console.dir(data);
+      return organizationData;
+    }, [getAccessToken, fetchUserInfo]),
 
-        // Map the full Logto organization data to our simplified Organization type
-        return data.organizations.map((org: any) => ({
-          id: org.id,
-          name: org.name,
-          description: org.description,
-          branding: org.branding,
-        }));
-      },
-
-      getUserOrganizationScopes: async (organizationId: string): Promise<string[]> => {
+    getUserOrganizationScopes: useCallback(
+      async (organizationId: string): Promise<string[]> => {
         const organizationToken = await getOrganizationToken(organizationId);
 
         if (!organizationToken) {
@@ -93,7 +56,7 @@ export const useResourceApi = () => {
 
         return scopes;
       },
-    }),
-    [fetchWithToken, getOrganizationToken, getOrganizationTokenClaims],
-  );
+      [getAccessToken, getOrganizationToken, getOrganizationTokenClaims],
+    ),
+  };
 };

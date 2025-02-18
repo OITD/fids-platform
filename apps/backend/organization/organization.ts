@@ -7,11 +7,12 @@ import { CreateOrganizationParams, OrganizationsResponse, Organization, Role } f
 import { LogtoAPIResponse, OrganizationRole } from '../logto/types';
 
 // Create organization endpoint
-export const createOrganization = api(
+export const createOne = api(
   {
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'POST',
     path: '/organizations',
-    auth: true,
   },
   async (params: CreateOrganizationParams): Promise<Organization> => {
     const auth = getAuthData();
@@ -89,11 +90,12 @@ export const createOrganization = api(
 );
 
 // Update getOrganizations endpoint
-export const getOrganizations = api(
+export const getAll = api(
   {
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'GET',
     path: '/organizations',
-    auth: true,
   },
   async (): Promise<OrganizationsResponse> => {
     const auth = getAuthData();
@@ -106,6 +108,12 @@ export const getOrganizations = api(
         path: `/api/organizations`,
         method: 'GET',
       });
+
+      console.log(' ');
+      console.log(' ');
+      console.log('organizations', organizations);
+      console.log(' ');
+      console.log(' ');
 
       if (!organizations) {
         return { organizations: [] };
@@ -126,11 +134,12 @@ export const getOrganizations = api(
 );
 
 // Get a single organization by ID
-export const getOrganization = api(
+export const getOne = api(
   {
+    expose: true, // Is publicly accessible
+    auth: true, // Auth handler validation is required
     method: 'GET',
     path: '/organizations/:id',
-    auth: true,
   },
   async (params: { id: string }): Promise<Organization> => {
     const auth = getAuthData();
