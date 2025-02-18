@@ -9,6 +9,10 @@ export interface Organization {
   description: string;
 }
 
+export interface OrganizationsResponse {
+  organizations: Organization[];
+}
+
 export interface Role {
   id: string;
   name: string;

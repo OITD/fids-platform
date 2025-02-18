@@ -3,13 +3,8 @@ import { getAuthData } from '~encore/auth';
 import { logto } from '~encore/clients';
 import log from 'encore.dev/log';
 
-import { CreateOrganizationParams, Organization, Role } from './types';
-import { LogtoAPIResponse, OrganizationRole, OrganizationUsersResponse } from '../logto/types';
-
-interface CreateOrganizationRequest {
-  name: string;
-  description?: string;
-}
+import { CreateOrganizationParams, OrganizationsResponse, Organization, Role } from './types';
+import { LogtoAPIResponse, OrganizationRole } from '../logto/types';
 
 // Create organization endpoint
 export const createOrganization = api(
@@ -18,7 +13,7 @@ export const createOrganization = api(
     path: '/organizations',
     auth: true,
   },
-  async (params: CreateOrganizationRequest): Promise<Organization> => {
+  async (params: CreateOrganizationParams): Promise<Organization> => {
     const auth = getAuthData();
     if (!auth) {
       throw APIError.unauthenticated('User not authenticated');
@@ -89,6 +84,93 @@ export const createOrganization = api(
         throw error;
       }
       throw APIError.internal('Failed to create organization');
+    }
+  },
+);
+
+// Update getOrganizations endpoint
+export const getOrganizations = api(
+  {
+    method: 'GET',
+    path: '/organizations',
+    auth: true,
+  },
+  async (): Promise<OrganizationsResponse> => {
+    const auth = getAuthData();
+    if (!auth) {
+      throw APIError.unauthenticated('User not authenticated');
+    }
+
+    try {
+      const { data: organizations }: LogtoAPIResponse<Organization[]> = await logto.callApi({
+        path: `/api/organizations`,
+        method: 'GET',
+      });
+
+      if (!organizations) {
+        return { organizations: [] };
+      }
+
+      return { organizations };
+    } catch (error) {
+      log.error('Failed to fetch organizations', {
+        error: error instanceof Error ? error.message : String(error),
+        userId: auth.userID,
+      });
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw APIError.internal('Failed to fetch organizations');
+    }
+  },
+);
+
+// Get a single organization by ID
+export const getOrganization = api(
+  {
+    method: 'GET',
+    path: '/organizations/:id',
+    auth: true,
+  },
+  async (params: { id: string }): Promise<Organization> => {
+    const auth = getAuthData();
+    if (!auth) {
+      throw APIError.unauthenticated('User not authenticated');
+    }
+
+    try {
+      // Get organization details from Logto
+      const { data: organization }: LogtoAPIResponse<Organization> = await logto.callApi({
+        path: `/api/organizations/${params.id}`,
+        method: 'GET',
+      });
+
+      if (!organization) {
+        throw APIError.notFound('Organization not found');
+      }
+
+      // Get user's role in the organization
+      const { data: userRoles }: LogtoAPIResponse<OrganizationRole[]> = await logto.callApi({
+        path: `/api/organizations/${params.id}/users/${auth.userID}/roles`,
+        method: 'GET',
+      });
+
+      // Map to our Organization type
+      return {
+        id: organization.id,
+        name: organization.name,
+        description: organization.description,
+      };
+    } catch (error) {
+      log.error('Failed to fetch organization', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: params.id,
+        userId: auth.userID,
+      });
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw APIError.internal('Failed to fetch organization');
     }
   },
 );
