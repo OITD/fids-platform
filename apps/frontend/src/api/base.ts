@@ -1,12 +1,9 @@
 import { useLogto } from '@logto/react';
 import { useCallback } from 'react';
-import Client from '../lib/client';
-import getRequestClient from '../lib/get-request-client';
 
-import { APP_ENV } from '../env';
+import { APP_ENV } from '~/env';
 
 const API_BASE_URL = APP_ENV.api.baseUrl;
-const APP_API_RESOURCE_INDICATOR = APP_ENV.api.resourceIndicator;
 
 export class ApiRequestError extends Error {
   status?: number;
@@ -26,28 +23,29 @@ interface FetchOptions extends RequestInit {
 export const useApi = () => {
   const { getAccessToken, getOrganizationToken } = useLogto();
 
-  const getClient = useCallback(async (organizationId?: string): Promise<Client> => {
-    let token: string | undefined;
+  const getToken = useCallback(
+    async (organizationId?: string): Promise<string> => {
+      let token: string | undefined;
 
-    if (organizationId) {
-      token = await getOrganizationToken(organizationId);
-    } else {
-      token = await getAccessToken();
-    }
+      if (organizationId) {
+        token = await getOrganizationToken(organizationId);
+      } else {
+        token = await getAccessToken();
+      }
 
-    if (!token) {
-      throw new Error(organizationId ? 'User is not a member of the organization' : 'Failed to get access token');
-    }
+      if (!token) {
+        throw new Error(organizationId ? 'User is not a member of the organization' : 'Failed to get access token');
+      }
 
-    return getRequestClient(token);
-  }, [getAccessToken, getOrganizationToken]);
+      return token;
+    },
+    [getAccessToken, getOrganizationToken],
+  );
 
   const fetchWithToken = useCallback(
     async (path: string, options: FetchOptions = {}, organizationId?: string) => {
       try {
-        const client = await getClient(organizationId);
-
-        const adminData = await client.admin.getDashboardData();
+        const token = await getToken(organizationId);
 
         const headers = new Headers(options.headers);
 
@@ -92,5 +90,5 @@ export const useApi = () => {
     [getAccessToken, getOrganizationToken],
   );
 
-  return { getClient, fetchWithToken };
+  return { getToken, fetchWithToken };
 };

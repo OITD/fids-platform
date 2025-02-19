@@ -2,7 +2,7 @@ import { api, APIError } from 'encore.dev/api';
 import { getAuthData } from '~encore/auth';
 import { SQLDatabase } from 'encore.dev/storage/sqldb';
 
-import type {
+import {
   Workspace,
   CreateWorkspaceRequest,
   CreateWorkspaceResponse,
@@ -10,6 +10,8 @@ import type {
   UpdateWorkspaceRequest,
   UpdateWorkspaceResponse,
   DeleteWorkspaceResponse,
+  GetWorkspaceRequest,
+  GetWorkspaceResponse,
 } from './types';
 
 // Initialize database
@@ -25,10 +27,10 @@ export const getOne = api(
     method: 'GET',
     path: '/workspace/:id',
   },
-  async (params: { id: string }): Promise<Workspace & { content: string }> => {
+  async (params: GetWorkspaceRequest): Promise<GetWorkspaceResponse> => {
     const auth = getAuthData() as AuthData;
 
-    const row = await DB.queryRow<Workspace & { content: string }>`
+    const row = await DB.queryRow<Workspace>`
       SELECT
         id,
         title,
@@ -45,7 +47,7 @@ export const getOne = api(
       throw APIError.notFound('Workspace not found');
     }
 
-    return row;
+    return { workspace: row };
   },
 );
 
@@ -60,7 +62,7 @@ export const getAll = api(
   async (): Promise<{ workspaces: Workspace[] }> => {
     const auth = getAuthData() as AuthData;
 
-    const rows = await DB.query<Workspace>`
+    const rows = DB.query<Workspace>`
       SELECT
         id,
         title,

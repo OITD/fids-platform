@@ -3,11 +3,11 @@ import { useNavigate, useParams } from 'react-router';
 import { useLogto } from '@logto/react';
 import { useResourceApi, type Organization } from '~/api/resource';
 import { useWorkspaceApi, type Workspace } from '~/api/workspace';
-import { ActionBar } from './components/ActionBar';
+
 import { WorkspaceList } from './components/WorkspaceList';
 import { CreateWorkspaceDialog } from './components/CreateWorkspaceDialog';
 import { EditWorkspaceDialog } from './components/EditWorkspaceDialog';
-import { LoadingSpinner } from '../../components/loading-spinner.tsx';
+import { LoadingSpinner } from '~/components/loading-spinner.tsx';
 import { ErrorMessage } from './components/ErrorMessage';
 import { WorkspaceTopbar } from '~/components/workspace-topbar';
 import { Button } from '~/components/ui/button';
@@ -66,7 +66,7 @@ export const OrganizationPage = () => {
 
   const renderActions = () => {
     if (!userScopes.includes('create:resources')) return null;
-    
+
     return (
       <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
         <Plus className="mr-2 h-4 w-4" />
@@ -86,7 +86,7 @@ export const OrganizationPage = () => {
   return (
     <div className="flex h-full flex-col">
       <WorkspaceTopbar title="Workspaces" actions={renderActions()} />
-      
+
       <div className="flex-1 overflow-auto">
         <div className="container mx-auto p-6">
           <WorkspaceList

@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
 import { useLogto } from '@logto/react';
 
-import getRequestClient from '../lib/get-request-client';
-import { upload } from '../lib/client';
-import { useApi } from '../api/base';
+import getRequestClient from '~/lib/get-request-client';
+import { upload } from '~/lib/client';
+import { useApi } from '~/api/base';
 
-import FileInfo = upload.FileMetadata;
+import FileMetadata = upload.FileMetadata;
+
+export type { FileMetadata };
 
 export const useFileApi = () => {
   const { fetchWithToken } = useApi();
@@ -13,7 +15,7 @@ export const useFileApi = () => {
 
   return {
     listFiles: useCallback(
-      async (orgId: string, workspaceId: string): Promise<FileInfo[]> => {
+      async (orgId: string, workspaceId: string): Promise<FileMetadata[]> => {
         const token = await getOrganizationToken(orgId);
         if (!token) throw new Error('User is not a member of the organization');
 
@@ -25,13 +27,16 @@ export const useFileApi = () => {
     ),
 
     uploadFile: useCallback(
-      async (orgId: string, workspaceId: string, formData: FormData): Promise<Types.fi.FileMetadata> => {
+      async (orgId: string, workspaceId: string, formData: FormData): Promise<FileMetadata> => {
+        const token = await getOrganizationToken(orgId);
+        if (!token) throw new Error('User is not a member of the organization');
+
         const headers = new Headers();
         // Let the browser set the boundary in the content-type
         // Don't set content-type manually as it needs the boundary parameter
 
         const response = await fetchWithToken(
-          '/upload',
+          `/upload/${workspaceId}`,
           {
             method: 'POST',
             body: formData,

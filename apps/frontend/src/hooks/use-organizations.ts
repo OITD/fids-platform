@@ -2,7 +2,7 @@ import { useLogto } from '@logto/react';
 import { useState, useCallback } from 'react';
 import type { OrganizationData } from '~/types/organization';
 
-import { useResourceApi } from '../api/resource';
+import { useResourceApi } from '~/api/resource';
 
 export function useOrganizations() {
   const { fetchUserInfo } = useLogto();

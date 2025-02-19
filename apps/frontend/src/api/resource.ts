@@ -1,12 +1,14 @@
 import { useCallback } from 'react';
 import { useLogto } from '@logto/react';
 
-import getRequestClient from '../lib/get-request-client';
-import { organization } from '../lib/client';
+import getRequestClient from '~/lib/get-request-client';
+import { organization } from '~/lib/client';
 
 import Organization = organization.Organization;
 import CreateOrganizationParams = organization.CreateOrganizationParams;
 import { OrganizationData } from '~/types/organization';
+
+export type { Organization };
 
 export const useResourceApi = () => {
   const { getAccessToken, getOrganizationToken, getOrganizationTokenClaims, fetchUserInfo } = useLogto();
@@ -18,11 +20,11 @@ export const useResourceApi = () => {
         if (!token) throw new Error('User not authenticated');
 
         const client = getRequestClient(token);
-        const response = await client.organization.createOne(params);
+        const organization = await client.organization.createOne(params);
 
-        console.log('createOrganization response', response);
+        console.log('createOrganization organization', organization);
 
-        return response.organization;
+        return organization;
       },
       [getAccessToken],
     ),
@@ -32,11 +34,11 @@ export const useResourceApi = () => {
       if (!token) throw new Error('User not authenticated');
 
       const userInfo = await fetchUserInfo();
-      const organizationData = (userInfo?.organization_data || []) as OrganizationData[];
+      const organizations = (userInfo?.organization_data || []) as OrganizationData[];
 
-      console.log('getOrganizations response', organizationData);
+      console.log('getOrganizations organizations', organizations);
 
-      return organizationData;
+      return organizations;
     }, [getAccessToken, fetchUserInfo]),
 
     getUserOrganizationScopes: useCallback(

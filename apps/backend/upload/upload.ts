@@ -47,6 +47,12 @@ export const uploadOne = api.raw(
     path: '/upload/:workspaceId',
   },
   async (req, resp) => {
+    console.log(' ');
+    console.log(' ');
+    console.log('req', req);
+    console.log(' ');
+    console.log(' ');
+    console.log(' ');
     const auth = getAuthData() as AuthData;
     const { workspaceId } = (currentRequest() as APICallMeta).pathParams;
     let uploadedFileName: string | null = null;

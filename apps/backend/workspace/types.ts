@@ -16,6 +16,14 @@ export interface CreateWorkspaceResponse {
   workspace: Workspace;
 }
 
+export interface GetWorkspaceRequest {
+  id: string;
+}
+
+export interface GetWorkspaceResponse {
+  workspace: Workspace;
+}
+
 // Auth data structure matching the Express implementation
 export interface AuthData {
   userID: string;

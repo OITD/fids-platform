@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router';
 import { useLogto } from '@logto/react';
 
-import { APP_ENV } from '../env';
+import { APP_ENV } from '~/env';
 
 const RequireAuth = () => {
   const { isAuthenticated, isLoading, signIn } = useLogto();
