@@ -74,13 +74,6 @@ const decodeJwtPayload = (token: string) => {
 
   const [, payloadBase64] = parts;
 
-  // Remove debug logging
-  // console.log(' ');
-  // console.log(' ');
-  // console.log(payloadBase64);
-  // console.log(' ');
-  // console.log(' ');
-
   try {
     // Add padding if needed
     const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
@@ -130,6 +123,19 @@ const extractOrganizationId = (aud: any) => {
   return aud.replace('urn:logto:organization:', '');
 };
 
+const isJWT = (token: string): boolean => {
+  // Simple check if the token contains two dots (three parts)
+  return token.split('.').length === 3;
+};
+
+const getFetchOptions = (headers: Record<string, string>) => {
+  const options: RequestInit = {
+    headers,
+  };
+
+  return options;
+};
+
 // The auth handler itself.
 export const auth = authHandler<AuthParams, AuthData>(async (params): Promise<AuthData> => {
   const { token } = params;
@@ -138,44 +144,96 @@ export const auth = authHandler<AuthParams, AuthData>(async (params): Promise<Au
     throw APIError.unauthenticated('Authorization token missing');
   }
 
-  log.debug('Received token', { token: token.substring(0, 20) + '...' }); // Only log first 20 chars for security
+  log.debug('Received token', { token: token.substring(0, 20) + '...' });
 
-  // Check if token type is Bearer and return the JWT portion
-  const JWT = extractJWT(token);
-  if (!JWT) {
-    throw APIError.unauthenticated('Authorization JWT malformed');
+  // Check if token type is Bearer and return the token portion
+  const cleanToken = extractJWT(token);
+  if (!cleanToken) {
+    throw APIError.unauthenticated('Authorization token malformed');
   }
 
-  // Dynamically get the audience from the token
-  const { aud } = decodeJwtPayload(JWT);
-  if (!aud) {
-    throw APIError.unauthenticated('Missing audience in token');
+  // Handle both JWT and regular access tokens
+  if (isJWT(cleanToken)) {
+    // Handle JWT (organization) token
+    const { aud } = decodeJwtPayload(cleanToken);
+    if (!aud) {
+      throw APIError.unauthenticated('Missing audience in token');
+    }
+
+    const payload = await verifyJwt(cleanToken, aud);
+    if (!payload.sub) {
+      throw APIError.unauthenticated('Missing subject in token');
+    }
+
+    const organizationID = extractOrganizationId(payload.aud);
+
+    return {
+      userID: payload.sub,
+      clientID: String(payload.client_id),
+      organizationID: organizationID,
+      scopes: String(payload.scope || '')
+        .split(' ')
+        .filter(Boolean),
+    };
+  } else {
+    // Handle regular access token
+    try {
+      const config = getLogtoConfig();
+      const userInfoUrl = `${config.baseUrl}/oidc/me`;
+
+      log.debug('Fetching user info', { url: userInfoUrl });
+
+      const response = await fetch(
+        userInfoUrl,
+        getFetchOptions({
+          Authorization: `Bearer ${cleanToken}`,
+          Accept: 'application/json',
+        }),
+      );
+
+      const responseText = await response.text();
+      log.debug('UserInfo response', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: responseText,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch userinfo: ${response.status} ${response.statusText}`);
+      }
+
+      let userInfo;
+      try {
+        userInfo = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Invalid JSON response from userinfo endpoint: ${responseText}`);
+      }
+
+      if (!userInfo.sub) {
+        throw new Error('Missing sub claim in userinfo response');
+      }
+
+      log.debug('Parsed user info', { userInfo });
+
+      return {
+        userID: userInfo.sub,
+        clientID: userInfo.client_id || '',
+        organizationID: '', // Empty for regular access tokens
+        scopes: String(userInfo.scope || '')
+          .split(' ')
+          .filter(Boolean),
+      };
+    } catch (error) {
+      log.error('Failed to verify access token', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      // Throw a more specific error message
+      throw APIError.unauthenticated(`Failed to verify access token: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
-
-  // Verify the token with the audience
-  const payload = await verifyJwt(JWT, aud);
-  if (!payload.sub) {
-    throw APIError.unauthenticated('Missing subject in token');
-  }
-
-  // Extract organization ID from the audience claim
-  const organizationID = extractOrganizationId(payload.aud);
-
-  log.info(`payload: ${JSON.stringify(payload, null, 2)}`);
-
-  const authData: AuthData = {
-    userID: payload.sub,
-    clientID: String(payload.client_id),
-    organizationID: organizationID,
-    // scopes: String(payload.role || ''),
-    scopes: String(payload.scope || '')
-      .split(' ')
-      .filter(Boolean),
-  };
-
-  log.info(`Authenticated: ${JSON.stringify(authData, null, 2)}`);
-
-  return authData;
 });
 
 // Define the API Gateway that will execute the auth handler:

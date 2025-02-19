@@ -1,6 +1,6 @@
 export interface CreateOrganizationParams {
   name: string;
-  description: string;
+  description?: string;
 }
 
 export interface Organization {

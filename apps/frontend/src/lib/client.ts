@@ -319,6 +319,10 @@ export namespace workspace {
         success: boolean
     }
 
+    export interface GetWorkspaceResponse {
+        workspace: Workspace
+    }
+
     export interface UpdateWorkspaceRequest {
         title: string
         content: string
@@ -378,24 +382,10 @@ export namespace workspace {
         /**
          * Get single workspace endpoint
          */
-        public async getOne(id: string): Promise<{
-    id: string
-    title: string
-    preview: string
-    updatedAt: string
-    updatedBy: string
-    content: string
-}> {
+        public async getOne(id: string): Promise<GetWorkspaceResponse> {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI("GET", `/workspace/${encodeURIComponent(id)}`)
-            return await resp.json() as {
-    id: string
-    title: string
-    preview: string
-    updatedAt: string
-    updatedBy: string
-    content: string
-}
+            return await resp.json() as GetWorkspaceResponse
         }
 
         /**
