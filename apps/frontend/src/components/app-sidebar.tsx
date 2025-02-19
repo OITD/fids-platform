@@ -62,48 +62,52 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
 
+  // Add a refresh trigger state
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Modify the loadUserData function to be callable from outside useEffect
+  const loadUserData = async () => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const [userInfo, orgs] = await Promise.all([fetchUserInfo(), getOrganizations()]);
+
+      if (!userInfo) {
+        throw new Error('Failed to fetch user info');
+      }
+
+      // Set user data
+      setUserData({
+        name: userInfo.name || userInfo.username || 'User',
+        email: userInfo.email || 'No email',
+        avatar: userInfo.picture || '',
+      });
+
+      // Set organizations
+      setOrganizations(
+        orgs.map((org) => ({
+          id: org.id,
+          name: org.name,
+          description: org.description,
+          logo: GalleryVerticalEnd,
+          plan: 'Free',
+        })),
+      );
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+      setError('Failed to load user data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load user data and organizations
   useEffect(() => {
-    const loadUserData = async () => {
-      if (!isAuthenticated) {
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const [userInfo, orgs] = await Promise.all([fetchUserInfo(), getOrganizations()]);
-
-        if (!userInfo) {
-          throw new Error('Failed to fetch user info');
-        }
-
-        // Set user data
-        setUserData({
-          name: userInfo.name || userInfo.username || 'User',
-          email: userInfo.email || 'No email',
-          avatar: userInfo.picture || '',
-        });
-
-        // Set organizations
-        setOrganizations(
-          orgs.map((org) => ({
-            id: org.id,
-            name: org.name,
-            description: org.description,
-            logo: GalleryVerticalEnd,
-            plan: 'Free',
-          })),
-        );
-      } catch (error) {
-        console.error('Failed to fetch user data:', error);
-        setError('Failed to load user data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadUserData();
-  }, [isAuthenticated, fetchUserInfo, getOrganizations]);
+  }, [isAuthenticated, fetchUserInfo, getOrganizations, refreshTrigger]); // Add refreshTrigger to dependencies
 
   // Load organization-specific data when organization changes
   useEffect(() => {
@@ -174,6 +178,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           }))}
           onTeamSelect={handleOrgClick}
           activeTeamId={organizationId}
+          onTeamCreated={() => setRefreshTrigger(prev => prev + 1)}
         />
       </SidebarHeader>
       <SidebarContent>

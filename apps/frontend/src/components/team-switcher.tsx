@@ -26,9 +26,10 @@ interface TeamSwitcherProps {
   }[];
   onTeamSelect: (teamId: string) => void;
   activeTeamId?: string;
+  onTeamCreated?: () => void;
 }
 
-export function TeamSwitcher({ teams, onTeamSelect, activeTeamId }: TeamSwitcherProps) {
+export function TeamSwitcher({ teams, onTeamSelect, activeTeamId, onTeamCreated }: TeamSwitcherProps) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
@@ -57,6 +58,8 @@ export function TeamSwitcher({ teams, onTeamSelect, activeTeamId }: TeamSwitcher
       const newOrg = await createOrganization(newTeamName.trim());
       setShowNewTeamDialog(false);
       setNewTeamName('');
+      // Call the onTeamCreated callback
+      onTeamCreated?.();
       // Navigate to the new organization
       navigate(`/${newOrg.id}`);
     } catch (error) {
