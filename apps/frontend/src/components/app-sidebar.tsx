@@ -1,19 +1,6 @@
 import type * as React from 'react';
-import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-  Folder,
-} from 'lucide-react';
+import { GalleryVerticalEnd, SquareTerminal, Folder } from 'lucide-react';
 
-import { Local } from '~/lib/client';
 import { useWorkspaceApi } from '~/api/workspace';
 import { NavMain } from './nav-main';
 import { NavProjects } from './nav-projects';
@@ -106,7 +93,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Load user data and organizations
   useEffect(() => {
-    loadUserData();
+    void loadUserData();
   }, [isAuthenticated, fetchUserInfo, getOrganizations, refreshTrigger]); // Add refreshTrigger to dependencies
 
   // Load organization-specific data when organization changes
@@ -178,7 +165,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           }))}
           onTeamSelect={handleOrgClick}
           activeTeamId={organizationId}
-          onTeamCreated={() => setRefreshTrigger(prev => prev + 1)}
+          onTeamCreated={() => setRefreshTrigger((prev) => prev + 1)}
         />
       </SidebarHeader>
       <SidebarContent>

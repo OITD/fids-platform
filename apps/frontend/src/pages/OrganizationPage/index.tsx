@@ -12,6 +12,17 @@ import { ErrorMessage } from './components/ErrorMessage';
 import { WorkspaceTopbar } from '~/components/workspace-topbar';
 import { Button } from '~/components/ui/button';
 import { Plus } from 'lucide-react';
+import { AppSidebar } from '~/components/app-sidebar.tsx';
+import { SidebarInset, SidebarTrigger } from '~/components/ui/sidebar.tsx';
+import { Separator } from '~/components/ui/separator.tsx';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '~/components/ui/breadcrumb.tsx';
 
 export const OrganizationPage = () => {
   const { orgId } = useParams();
@@ -61,7 +72,7 @@ export const OrganizationPage = () => {
 
   const handleWorkspaceDelete = (workspaceId: string) => {
     if (!orgId) return;
-    deleteWorkspace(orgId, workspaceId);
+    void deleteWorkspace(orgId, workspaceId);
   };
 
   const renderActions = () => {
@@ -84,48 +95,96 @@ export const OrganizationPage = () => {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <WorkspaceTopbar title="Workspaces" actions={renderActions()} />
+    <>
+      <AppSidebar />
 
-      <div className="flex-1 overflow-auto">
-        <div className="container mx-auto p-6">
-          <WorkspaceList
-            workspaces={workspaces}
-            onWorkspaceClick={handleWorkspaceClick}
-            canEdit={userScopes?.includes('edit:resources')}
-            onWorkspaceEdit={handleWorkspaceEdit}
-            canDelete={userScopes?.includes('delete:resources')}
-            onWorkspaceDelete={handleWorkspaceDelete}
-          />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">Building Your Application</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
+
+        <div className="flex h-full flex-col">
+          <WorkspaceTopbar title="Workspaces" actions={renderActions()} />
+
+          <div className="flex-1 overflow-auto">
+            <div className="container mx-auto p-6">
+              <WorkspaceList
+                workspaces={workspaces}
+                onWorkspaceClick={handleWorkspaceClick}
+                canEdit={userScopes?.includes('edit:resources')}
+                onWorkspaceEdit={handleWorkspaceEdit}
+                canDelete={userScopes?.includes('delete:resources')}
+                onWorkspaceDelete={handleWorkspaceDelete}
+              />
+            </div>
+          </div>
+
+          {isCreateDialogOpen && (
+            <CreateWorkspaceDialog
+              onClose={() => setIsCreateDialogOpen(false)}
+              onWorkspaceCreated={(workspace) => {
+                setWorkspaces((prev) => [workspace, ...prev]);
+                setIsCreateDialogOpen(false);
+              }}
+            />
+          )}
+
+          {isEditDialogOpen && editWorkspaceId && workspaces.some((w) => w.id === editWorkspaceId) && (
+            <EditWorkspaceDialog
+              workspace={workspaces.find((workspace) => workspace.id === editWorkspaceId)!} // Ensures workspace is never undefined
+              onClose={() => {
+                console.log('onClose');
+                setEditWorkspaceId(undefined);
+                setIsEditDialogOpen(false);
+              }}
+              onWorkspaceUpdated={(updatedWorkspace) => {
+                console.log('index onWorkspaceUpdated workspace', updatedWorkspace);
+                setWorkspaces((prev) => prev.map((w) => (w.id === updatedWorkspace.id ? updatedWorkspace : w)));
+                setEditWorkspaceId(undefined);
+                setIsEditDialogOpen(false);
+              }}
+            />
+          )}
         </div>
-      </div>
-
-      {isCreateDialogOpen && (
-        <CreateWorkspaceDialog
-          onClose={() => setIsCreateDialogOpen(false)}
-          onWorkspaceCreated={(workspace) => {
-            setWorkspaces((prev) => [workspace, ...prev]);
-            setIsCreateDialogOpen(false);
-          }}
-        />
-      )}
-
-      {isEditDialogOpen && editWorkspaceId && workspaces.some((w) => w.id === editWorkspaceId) && (
-        <EditWorkspaceDialog
-          workspace={workspaces.find((workspace) => workspace.id === editWorkspaceId)!} // Ensures workspace is never undefined
-          onClose={() => {
-            console.log('onClose');
-            setEditWorkspaceId(undefined);
-            setIsEditDialogOpen(false);
-          }}
-          onWorkspaceUpdated={(updatedWorkspace) => {
-            console.log('index onWorkspaceUpdated workspace', updatedWorkspace);
-            setWorkspaces((prev) => prev.map((w) => (w.id === updatedWorkspace.id ? updatedWorkspace : w)));
-            setEditWorkspaceId(undefined);
-            setIsEditDialogOpen(false);
-          }}
-        />
-      )}
-    </div>
+      </SidebarInset>
+    </>
   );
 };
+
+/*
+<AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">Building Your Application</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
+
+      </SidebarInset>
+ */
