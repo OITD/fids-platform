@@ -64,6 +64,26 @@ actions:
          });
          ```
 
+      5. Database Operations:
+         ```typescript
+         // Database connection
+         const db = drizzle(DB.connectionString);
+
+         // Query patterns
+         const result = await db.select()
+           .from(users)
+           .where(eq(users.id, id))
+           .limit(1);
+
+         // Pagination
+         const offset = getOffset(page, limit);
+         const results = await db.select()
+           .from(users)
+           .orderBy(asc(users.id))
+           .limit(limit)
+           .offset(offset);
+         ```
+
 examples:
   - input: |
       # Bad: Promise chains

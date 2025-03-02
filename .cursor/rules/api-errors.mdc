@@ -55,7 +55,34 @@ actions:
          throw APIError.notFound("resource not found");
          ```
 
-      3. Common Error Codes:
+      3. Service-Level Error Handling:
+         ```typescript
+         // Custom error classes
+         export class UserNotFoundError extends Error {
+           constructor(id: number) {
+             super(`User with id ${id} not found`);
+           }
+         }
+
+         // Controller error handling
+         try {
+           const result = await UserService.findOne(id);
+           return result;
+         } catch (error) {
+           throw APIError.aborted(error?.toString() || "Error getting user data");
+         }
+         ```
+
+      4. Response Structure:
+         ```typescript
+         interface Response {
+           success: boolean;
+           message?: string;
+           result?: T;
+         }
+         ```
+
+      5. Common Error Codes:
          - NotFound (404): Resource doesn't exist
          - InvalidArgument (400): Invalid input
          - PermissionDenied (403): Lacks permission
@@ -64,7 +91,7 @@ actions:
          - AlreadyExists (409): Resource conflict
          - Unauthenticated (401): Not authenticated
 
-      4. Best Practices:
+      6. Best Practices:
          - Use descriptive error messages
          - Include relevant error details
          - Maintain consistent error patterns

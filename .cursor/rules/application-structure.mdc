@@ -49,7 +49,26 @@ actions:
          export default new Service("my-service");
          ```
 
-      3. Application Patterns:
+      3. Service Organization:
+         ```
+         /service-name/
+         ├── database.ts       # Database configuration and connection
+         ├── schema.ts         # Database schema definitions
+         ├── drizzle.config.ts # Database tooling configuration
+         ├── service-name.interface.ts # Type definitions and interfaces
+         ├── service-name.service.ts   # Business logic layer
+         ├── service-name.controller.ts # API endpoint definitions
+         └── utils.ts          # Shared utilities
+         ```
+
+      4. Layer Separation:
+         - Controllers: Handle HTTP concerns and input validation
+         - Services: Contain business logic
+         - Interfaces: Define types and contracts
+         - Schema: Database structure
+         - Utils: Shared helper functions
+
+      5. Application Patterns:
          a. Single Service (recommended for new projects):
             ```
             /my-app

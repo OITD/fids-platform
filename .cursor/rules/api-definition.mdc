@@ -42,18 +42,31 @@ actions:
 
       2. API Structure:
          ```typescript
-         interface RequestParams {
-           // Define request parameters
-         }
-         interface ResponseType {
-           // Define response structure
-         }
-         export const endpoint = api(
-           { method: "POST" },
-           async (params: RequestParams): Promise<ResponseType> => {
-             // Implementation
-           }
-         );
+         // Interface definitions
+          interface RequestParams {
+            id?: number;
+            page?: number;
+            limit?: number;
+          }
+
+          interface Response<T> {
+            success: boolean;
+            message?: string;
+            result?: T;
+            pagination?: Paginated;
+          }
+
+          // API endpoint
+          export const endpoint = api(
+            {
+              expose: true,
+              method: "GET",
+              path: "/resource/:id"
+            },
+            async (params: RequestParams): Promise<Response<T>> => {
+              // Implementation
+            }
+          );
          ```
 
       3. Parameter Types:
@@ -66,6 +79,10 @@ actions:
          - Response only: no params
          - Request only: void response
          - No data: no params, void response
+         - CRUD operations with consistent paths
+         - Pagination support
+         - Proper error handling
+         - Input validation
 
 examples:
   - input: |
