@@ -35,7 +35,9 @@ export default class Client {
     public readonly hello: hello.ServiceClient
     public readonly logto: logto.ServiceClient
     public readonly organization: organization.ServiceClient
+    public readonly stripe: stripe.ServiceClient
     public readonly upload: upload.ServiceClient
+    public readonly users: users.ServiceClient
     public readonly workspace: workspace.ServiceClient
 
 
@@ -52,7 +54,9 @@ export default class Client {
         this.hello = new hello.ServiceClient(base)
         this.logto = new logto.ServiceClient(base)
         this.organization = new organization.ServiceClient(base)
+        this.stripe = new stripe.ServiceClient(base)
         this.upload = new upload.ServiceClient(base)
+        this.users = new users.ServiceClient(base)
         this.workspace = new workspace.ServiceClient(base)
     }
 }
@@ -200,7 +204,7 @@ export namespace logto {
 export namespace organization {
     export interface CreateOrganizationParams {
         name: string
-        description: string
+        description?: string
     }
 
     export interface Organization {
@@ -245,6 +249,106 @@ export namespace organization {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI("GET", `/organizations/${encodeURIComponent(id)}`)
             return await resp.json() as Organization
+        }
+    }
+}
+
+export namespace stripe {
+    export interface GetSubscriptionUrl {
+        url: string
+    }
+
+    export interface GetSubscriptionUrlRequest {
+        priceId: string
+        successUrl: string
+        cancelUrl: string
+        customerId?: string
+    }
+
+    export interface ListProductsRequest {
+        active?: boolean
+        limit?: number
+        startingAfter?: string
+    }
+
+    export interface StripeProduct {
+        id: string
+        name: string
+        description: string | null
+        active: boolean
+        metadata: { [key: string]: any }
+    }
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+        }
+
+        public async getSubscriptionUrl(params: GetSubscriptionUrlRequest): Promise<{
+    success: boolean
+    result?: GetSubscriptionUrl
+    error?: {
+        message: string
+        code?: string
+    }
+    hasMore?: boolean
+    nextPageToken?: string
+}> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("POST", `/stripe/subscription-url`, JSON.stringify(params))
+            return await resp.json() as {
+    success: boolean
+    result?: GetSubscriptionUrl
+    error?: {
+        message: string
+        code?: string
+    }
+    hasMore?: boolean
+    nextPageToken?: string
+}
+        }
+
+        /**
+         * List plans endpoint
+         */
+        public async listPlans(params: ListProductsRequest): Promise<{
+    success: boolean
+    result?: StripeProduct[]
+    error?: {
+        message: string
+        code?: string
+    }
+    hasMore?: boolean
+    nextPageToken?: string
+}> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                active:        params.active === undefined ? undefined : String(params.active),
+                limit:         params.limit === undefined ? undefined : String(params.limit),
+                startingAfter: params.startingAfter,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/stripe/plans`, undefined, {query})
+            return await resp.json() as {
+    success: boolean
+    result?: StripeProduct[]
+    error?: {
+        message: string
+        code?: string
+    }
+    hasMore?: boolean
+    nextPageToken?: string
+}
+        }
+
+        /**
+         * Logto webhook handler
+         */
+        public async logtoWebhook(method: "POST", body?: BodyInit, options?: CallParameters): Promise<globalThis.Response> {
+            return this.baseClient.callAPI(method, `/stripe/logto/webhook`, body, options)
         }
     }
 }
@@ -301,6 +405,183 @@ export namespace upload {
          */
         public async uploadOne(method: "POST", workspaceId: string, body?: BodyInit, options?: CallParameters): Promise<globalThis.Response> {
             return this.baseClient.callAPI(method, `/upload/${encodeURIComponent(workspaceId)}`, body, options)
+        }
+    }
+}
+
+export namespace users {
+    export interface CreateUserDto {
+        /**
+         * Name of the user
+         */
+        name: string
+
+        /**
+         * Surname of the user
+         */
+        surname: string
+    }
+
+    export interface Paginated {
+        /**
+         * Total number of results
+         */
+        count: number
+
+        /**
+         * Number of results per page
+         */
+        pageSize: number
+
+        /**
+         * Total number of pages
+         */
+        totalPages: number
+
+        /**
+         * Current page number
+         */
+        current: number
+    }
+
+    export interface Response {
+        /**
+         * Indicates if the request was successful
+         */
+        success: boolean
+
+        /**
+         * Error message if the request was not successful
+         */
+        message?: string
+
+        /**
+         * The result of the request
+         */
+        result?: string | number
+    }
+
+    export interface UpdateUserDto {
+        /**
+         * Name of the user
+         */
+        name?: string
+
+        /**
+         * Surname of the user
+         */
+        surname?: string
+    }
+
+    export interface UserDto {
+        /**
+         * ID of the user
+         */
+        id: number
+
+        /**
+         * Name of the user
+         */
+        name: string
+
+        /**
+         * Surname of the user
+         */
+        surname: string
+    }
+
+    export interface UserResponse {
+        /**
+         * Indicates if the request was successful
+         */
+        success: boolean
+
+        /**
+         * Error message if the request was not successful
+         */
+        message?: string
+
+        /**
+         * User data
+         */
+        result?: UserDto | UserDto[]
+
+        /**
+         * Pagination data
+         */
+        pagination?: Paginated
+    }
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+        }
+
+        /**
+         * Counts and returns the number of existing users
+         */
+        public async count(): Promise<Response> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/count/users`)
+            return await resp.json() as Response
+        }
+
+        /**
+         * Method to create a new user
+         */
+        public async create(params: CreateUserDto): Promise<UserResponse> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("POST", `/users`, JSON.stringify(params))
+            return await resp.json() as UserResponse
+        }
+
+        /**
+         * Delete user by id
+         */
+        public async destroy(id: number): Promise<Response> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("DELETE", `/users/${encodeURIComponent(id)}`)
+            return await resp.json() as Response
+        }
+
+        /**
+         * Get all users data
+         */
+        public async read(params: {
+    page?: number
+    limit?: number
+}): Promise<UserResponse> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                limit: params.limit === undefined ? undefined : String(params.limit),
+                page:  params.page === undefined ? undefined : String(params.page),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/users`, undefined, {query})
+            return await resp.json() as UserResponse
+        }
+
+        /**
+         * Get user data by id
+         */
+        public async readOne(id: number): Promise<UserResponse> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/users/${encodeURIComponent(id)}`)
+            return await resp.json() as UserResponse
+        }
+
+        /**
+         * Update user data
+         */
+        public async update(id: number, params: {
+    data: UpdateUserDto
+}): Promise<UserResponse> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("PATCH", `/users/${encodeURIComponent(id)}`, JSON.stringify(params))
+            return await resp.json() as UserResponse
         }
     }
 }

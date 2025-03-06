@@ -1,19 +1,23 @@
 import { LogtoProvider, LogtoConfig, useLogto, UserScope, ReservedResource } from '@logto/react';
 import { Routes, Route } from 'react-router';
 
+import { RequireAuth } from '~/lib/require-auth';
+import { SubscriptionVerification } from '~/lib/subscription-verification';
+import { SubscriptionGuard } from '~/lib/subscription-guard';
+
 import { PageLayout } from '~/layouts/page-layout';
+import { AdminLayout } from '~/layouts/admin-layout';
 
 import { Landing } from '~/pages/Landing';
-import { Dashboard } from '~/pages/Dashboard';
 import { Callback } from '~/pages/Callback';
+import { Subscribe } from '~/pages/Subscribe';
+import { Dashboard } from '~/pages/Dashboard';
+
 import { AdminDashboard } from '~/pages/AdminDashboard';
 import { OrganizationPage } from '~/pages/OrganizationPage';
+import { WorkspacePage } from '~/pages/WorkspacePage';
 
 import { APP_ENV } from '~/env';
-import { WorkspacePage } from '~/pages/WorkspacePage';
-import RequireAuth from '~/lib/require-auth';
-import { AdminLayout } from '~/layouts/admin-layout';
-import { useEffect, useState } from 'react';
 
 console.log('APP_ENV:', JSON.stringify(APP_ENV, null, 4));
 
@@ -21,6 +25,7 @@ const config: LogtoConfig = {
   endpoint: APP_ENV.logto.url,
   appId: APP_ENV.logto.appId,
   scopes: [
+    UserScope.CustomData,
     UserScope.Organizations,
     'create:organization',
     'create:resources',
@@ -36,6 +41,12 @@ export default function App() {
     <LogtoProvider config={config}>
       <Routes>
         <Route path="/callback" element={<Callback />} />
+
+        <Route path="/subscription" element={<RequireAuth />}>
+          <Route path="/subscription/verify" element={<SubscriptionVerification />} />
+          <Route path="/subscription/subscribe" element={<Subscribe />} />
+        </Route>
+
         <Route path="/*" element={<AppContent />} />
       </Routes>
     </LogtoProvider>
@@ -43,17 +54,17 @@ export default function App() {
 }
 
 function AppContent() {
-  const { isAuthenticated, getOrganizationToken, getOrganizationTokenClaims, getIdTokenClaims } = useLogto();
-  const [organizationIds, setOrganizationIds] = useState<string[]>();
-
-  useEffect(() => {
-    (async () => {
-      const claims = await getIdTokenClaims();
-
-      console.log('ID token claims', claims);
-      setOrganizationIds(claims?.organizations);
-    })();
-  }, [getIdTokenClaims]);
+  const { isAuthenticated /*, getOrganizationToken, getOrganizationTokenClaims, getIdTokenClaims*/ } = useLogto();
+  // const [organizationIds, setOrganizationIds] = useState<string[]>();
+  //
+  // useEffect(() => {
+  //   (async () => {
+  //     const claims = await getIdTokenClaims();
+  //
+  //     console.log('ID token claims', claims);
+  //     setOrganizationIds(claims?.organizations);
+  //   })();
+  // }, [getIdTokenClaims]);
 
   if (!isAuthenticated) {
     return (
@@ -67,7 +78,7 @@ function AppContent() {
 
   return (
     <Routes>
-      <Route path="/" element={<RequireAuth />}>
+      <Route path="/" element={<SubscriptionGuard />}>
         <Route element={<PageLayout />}>
           <Route path="/" element={<Dashboard />} />
         </Route>
