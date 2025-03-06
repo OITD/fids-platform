@@ -3,6 +3,7 @@
 brew install encoredev/tap/encore
 brew install mkcert
 brew install nss # if you use Firefox
+brew install stripe/stripe-cli/stripe
 mkcert -install
 npm install --global corepack@latest
 

@@ -14,6 +14,7 @@ import {
   OrganizationScopes,
   OrganizationRoleScopeRelations,
   Connectors,
+  Hooks,
 } from '@logto/schemas';
 
 import { config } from './config.js';
@@ -57,7 +58,7 @@ async function setupCustomLogto() {
       for (const experience of config.sign_in_experiences) {
         await connection.query(sql`
             UPDATE sign_in_experiences
-            SET 
+            SET
               color = ${sql.json(experience.color)},
               branding = ${sql.json(experience.branding)},
               language_info = ${sql.json(experience.language_info)},
@@ -112,17 +113,23 @@ async function setupCustomLogto() {
         // Convert config object to string if it's not already a string
         const connectorToInsert = {
           ...connector,
-          config: typeof connector.config === 'string' ? 
-            connector.config : 
+          config: typeof connector.config === 'string' ?
+            connector.config :
             JSON.stringify(connector.config),
-          metadata: typeof connector.metadata === 'string' ? 
-            connector.metadata : 
+          metadata: typeof connector.metadata === 'string' ?
+            connector.metadata :
             JSON.stringify(connector.metadata)
         };
-        
+
         await connection.query(insertInto(connectorToInsert, Connectors.table));
       }
       console.log(`Added ${config.connectors.length} connectors`);
+
+      //Add webhooks
+      for (const webhook of config.webhooks) {
+        await connection.query(insertInto(webhook, Hooks.table));
+      }
+      console.log(`Added ${config.webhooks.length} webhooks`);
     });
 
     console.log('Custom setup completed successfully');

@@ -56,6 +56,11 @@ const CONNECTOR_CONFIG_SCOPE_GOOGLE = 'openid profile email';
 const CONNECTOR_CONFIG_CLIENT_ID_GOOGLE = `${process.env.LOGTO_GOOGLE_CLIENT_ID}`;
 const CONNECTOR_CONFIG_CLIENT_SECRET_GOOGLE = `${process.env.LOGTO_GOOGLE_CLIENT_SECRET}`;
 
+const WEBHOOK_ID = generateId();
+const WEBHOOK_NAME = 'On New User Create';
+const WEBHOOK_URL = `${process.env.APP_API_URL}/stripe/logto/webhook`;
+const WEBHOOK_SIGNING_KEY = `${process.env.LOGTO_EVENT_WEBHOOK_SIGNING_KEY}`;
+
 const ROLE_M2M_ID = generateId();
 const ROLE_M2M_NAME = 'Management API Access';
 const ROLE_M2M_DESCRIPTION = 'Role with management API access scope.';
@@ -375,5 +380,20 @@ export const config = {
       organization_role_id: ORGANIZATION_ROLE_ID_MEMBER,
       organization_scope_id: ORGANIZATION_SCOPE_RESOURCE_READ_ID,
     },
+  ],
+
+  webhooks: [
+    {
+      tenantId: TENANT_ID,
+      id: WEBHOOK_ID,
+      name: WEBHOOK_NAME,
+      events: ['PostRegister'],
+      signingKey: WEBHOOK_SIGNING_KEY,
+      config: {
+        url: WEBHOOK_URL,
+      },
+      enabled: true,
+      createdAt: formatDate(now),
+    }
   ],
 };

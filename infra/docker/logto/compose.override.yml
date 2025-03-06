@@ -10,6 +10,8 @@ services:
         condition: service_healthy
     entrypoint: ["sh", "-c", "./packages/cli/custom-setup/entrypoint.sh"]
 #    entrypoint: ["sh", "-c", "npm run cli db seed -- --swe && npm start"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:3001:3001"
       - "127.0.0.1:3002:3002"
@@ -32,6 +34,8 @@ services:
       LOGTO_APP_API_RESOURCE: "${LOGTO_APP_API_RESOURCE}"
       LOGTO_MANAGEMENT_API_APPLICATION_ID: "${LOGTO_MANAGEMENT_API_APPLICATION_ID}"
       LOGTO_MANAGEMENT_API_APPLICATION_SECRET: "${LOGTO_MANAGEMENT_API_APPLICATION_SECRET}"
+
+      LOGTO_EVENT_WEBHOOK_SIGNING_KEY: "${LOGTO_EVENT_WEBHOOK_SIGNING_KEY}"
 
       CONNECTOR_ID_GOOGLE: "${CONNECTOR_ID_GOOGLE}"
       LOGTO_GOOGLE_CLIENT_ID: "${LOGTO_GOOGLE_CLIENT_ID}"
