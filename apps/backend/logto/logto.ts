@@ -32,7 +32,7 @@ function isJson(item: any): boolean {
 }
 
 function testIsJson(value: any, expected: any) {
-  console.log(`Expected: ${expected}, Actual: ${isJson(value)}`);
+  log.info(`Expected: ${expected}, Actual: ${isJson(value)}`);
 }
 
 // Internal endpoint to get management API token
@@ -43,7 +43,7 @@ export const getManagementApiToken = api({}, async (): Promise<TokenResult> => {
   // Return cached token if it exists and not expiring within 5 minutes
   if (cachedToken && Date.now() < cachedToken.expiresAt - 6 * 60 * 1000) {
     log.debug('Using cached token', { expiresIn: Math.floor((cachedToken.expiresAt - Date.now()) / 1000) });
-    console.log('cachedToken.token', cachedToken.token);
+  
     return { token: cachedToken.token };
   }
 
@@ -101,9 +101,6 @@ export const getManagementApiToken = api({}, async (): Promise<TokenResult> => {
     };
 
     tokenCache.set(cacheKey, newToken);
-
-    console.log('cacheKey', cacheKey);
-    console.log('newToken', newToken);
 
     return { token: newToken.token };
   } catch (error) {
