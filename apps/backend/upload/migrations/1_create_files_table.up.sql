@@ -14,8 +14,3 @@ CREATE TABLE files (
 
 CREATE INDEX files_organization_id_idx ON files(organization_id);
 CREATE INDEX files_workspace_id_idx ON files(workspace_id);
-
--- Update unique constraint
-ALTER TABLE files
-DROP CONSTRAINT IF EXISTS files_name_organization_id_key,
-ADD CONSTRAINT files_name_organization_id_workspace_id_key UNIQUE (name, organization_id, workspace_id);

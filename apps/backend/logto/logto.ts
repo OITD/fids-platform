@@ -36,7 +36,7 @@ function testIsJson(value: any, expected: any) {
 }
 
 // Internal endpoint to get management API token
-export const getManagementApiToken = api({ auth: true, expose: true }, async (): Promise<TokenResult> => {
+export const getManagementApiToken = api({}, async (): Promise<TokenResult> => {
   const cacheKey = 'management_token';
   const cachedToken = tokenCache.get(cacheKey);
 
